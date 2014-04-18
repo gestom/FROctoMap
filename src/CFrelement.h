@@ -14,8 +14,6 @@
 /**
 @author Tom Krajnik
 */
-#define MAX_OUTLIERS   40000
-#define MAX_FRELEMENTS 15 
 
 using namespace std;
 
@@ -26,13 +24,22 @@ typedef struct
 	unsigned int frequency;
 }SFrelement;
 
+typedef struct
+{
+	fftw_plan direct;
+	fftw_plan inverse;
+	double *probability;
+	double *signal;
+	fftw_complex *coeffs;	
+}SPlan;
+
 class CFrelement
 {
 public:
-  CFrelement();
+  CFrelement(int order=0);
   ~CFrelement();
 
-  void reconstruct(unsigned char* signal,int signalLength);
+  void reconstruct(unsigned char* signal,SPlan *plan);
 
   /*state estimation: retrieves the state*/
   float estimate(int timeStamp);
@@ -43,28 +50,29 @@ public:
   /*fills with values*/
   void fill(unsigned char values[],int number);
 
-  /*gets length in terms of values measured*/
-  int getLength();
-
-  /*gets length in terms of values measured*/
+  /*adds stuff*/
   void add(unsigned char value);
 
-  void build(unsigned char* signal,int signalLength,int modelOrder);
+  int getLength();
+
+  void build(unsigned char* signal,int signalLength,int modelOrder,SPlan *plan);
 
   /*clears all*/
   void clear();
   void print();
 
   /*changes the model order*/
-  void update(int number);
+  void update(int modelOrder,SPlan *plan);
 
   double *signal;
 
 private:
-	std::vector<SFrelement> frelements;
-	std::vector<unsigned int> outlierSet;
-	int signalLength;
+	SFrelement *frelements;
+	unsigned int *outlierSet;
+	unsigned int outliers;
+	unsigned int order;
 	float gain;
+	unsigned int signalLength;
 };
 
 #endif
