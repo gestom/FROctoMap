@@ -31,7 +31,7 @@ public:
   CFrelement();
   ~CFrelement();
 
-  void reconstruct(unsigned char* signal,CFFTPlan *plan);
+  float reconstruct(unsigned char* signal,CFFTPlan *plan,bool evaluate = false);
 
   /*state estimation: retrieves the state*/
   float estimate(int timeStamp);
