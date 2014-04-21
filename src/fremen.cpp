@@ -11,7 +11,15 @@ int main(int argc,char *argv[])
 	unsigned char *signal = (unsigned char*)malloc(10000000);
 	unsigned char *reconstructed = (unsigned char*)malloc(10000000);
 	int signalLength = 0;
-	ifstream file ("/home/gestom/catkin/weekbin.txt",ifstream::in);
+	if (argc != 4 && argc != 5) {
+		fprintf(stderr,"fremen filename fremen_order grid_cells max_signal_length\n");
+		return -1;
+	}
+	int modelOrder = atoi(argv[2]);
+	int gridSize = atoi(argv[3]);
+	
+	//read the input file
+	ifstream file (argv[1],ifstream::in);
 	int x;
 	while (file.good())
 	{
@@ -19,11 +27,21 @@ int main(int argc,char *argv[])
 		signal[signalLength++]=x;
 	}
 	file.close();
-	CTimer timer;
-	int gridSize = atoi(argv[2]);
-	int modelOrder = atoi(argv[1]);
-	signalLength=atoi(argv[3]);
+	signalLength--;
 
+	fprintf(stdout,"Signal length: %i ",signalLength);
+	if (argc == 5){
+		signalLength = atoi(argv[4]);
+		fprintf(stdout," manually reduced to %i ",signalLength);
+	}
+	fprintf(stdout,"\n");
+	if (signalLength == 0) {
+		fprintf(stdout,"Nothing to calculate - is the file correct ?\n");
+		return 1;	
+	}
+
+	CTimer timer;
+	timer.start();
 	CFremenGrid grid(gridSize);
 	for(int i=0;i<gridSize;i++)
 	{
@@ -32,6 +50,7 @@ int main(int argc,char *argv[])
 			grid.add(i,signal[j]);
 		}
 	}
+	timer.reset();
 	grid.update(modelOrder,signalLength);
 	cout << "Model update time " << timer.getTime()/atoi(argv[2])/1000 << " ms." << endl;
 	grid.print(0);

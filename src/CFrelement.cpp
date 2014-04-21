@@ -25,6 +25,7 @@ void CFrelement::build(unsigned char* signal,int signalLengthi,CFFTPlan *plan)
 {
 	signalLength = signalLengthi;
 	int fftLength = signalLength/2+1;
+	if (order > fftLength-1)order = fftLength-1;
 	fftw_complex *coeffs;
 	double *probability,*fftSignal;
 	CTimer timer;
@@ -51,11 +52,11 @@ void CFrelement::build(unsigned char* signal,int signalLengthi,CFFTPlan *plan)
 			tmpFrelements[i].amplitude = (coeffs[i][0]*coeffs[i][0]+coeffs[i][1]*coeffs[i][1]);
 			tmpFrelements[i].frequency = i;
 		}
-		partial_sort(tmpFrelements,tmpFrelements+order+1,tmpFrelements+(fftLength-1),fremenSort);
-		tim = timer.getTime();
-		//sort(tmpFrelements,tmpFrelements+(fftLength-1),fremenSort);
-
 		gain = sqrt(tmpFrelements[0].amplitude)/signalLength;
+
+		partial_sort(tmpFrelements+1,tmpFrelements+order+1,tmpFrelements+fftLength,fremenSort);
+		tim = timer.getTime();
+
 		for(int i=1;i<order+1;i++){
 			frelements[i-1].amplitude = sqrt(tmpFrelements[i].amplitude)/signalLength;
 			frelements[i-1].phase = atan2(coeffs[tmpFrelements[i].frequency][1],coeffs[tmpFrelements[i].frequency][0]);
@@ -99,7 +100,6 @@ void CFrelement::update(int modelOrder,CFFTPlan *plan)
 	unsigned char *reconstructed = (unsigned char*)malloc(signalLength*sizeof(unsigned char));
 	reconstruct(reconstructed,plan);
 	free(frelements);
-	//free(outlierSet);
 	order = modelOrder;
 	outliers = 0;
 	free(frelements);
@@ -109,8 +109,9 @@ void CFrelement::update(int modelOrder,CFFTPlan *plan)
 	free(reconstructed);
 }
 
-void CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan)
+float CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan,bool evaluate)
 {
+	float evaluation = -1; 
 	CTimer timer;
 	timer.start();
 
@@ -131,8 +132,8 @@ void CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan)
 			coeffs[frelements[i].frequency][1] = frelements[i].amplitude*sin(frelements[i].phase);
 		}
 		//cout << "IFFT preparation " << timer.getTime() << endl;
-
 		fftw_execute_dft_c2r(plan->inverse,coeffs,probability);
+		//for (int i = 0;i<signalLength;i++) cout << "Pro " << probability[i] << " " << estimate(i) << endl;
 	}else{
 		for (int i = 0;i<signalLength;i++) probability[i] = gain;
 	}
@@ -141,7 +142,6 @@ void CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan)
 	/*application of the outlier set*/
 	int j=0;
 	unsigned char flip = 0;
-	//for (int i = 0;i<signalLength;i++) cout << "Pro " << probability[i] << " " << estimate(i) << endl;
 	timer.reset();
 	if (outliers > 0){
 		int flipPos = outlierSet[j];
@@ -153,14 +153,19 @@ void CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan)
 				if (j >= outliers) j = outliers-1; 
 				flipPos = outlierSet[j];
 			}
-			signal[i] = ((probability[i]>0.5)^flip);
+			signal[i] = ((probability[i]>=0.5)^flip);
 		}
 	}else{
 		for (int i = 0;i<signalLength;i++) signal[i] = probability[i]>0.5;
 	}
+	if (evaluate){
+		 evaluation = 0;
+		 for (int i = 0;i<signalLength;i++) evaluation+=fabs(signal[i]-probability[i]);
+		 evaluation/=signalLength;
+	}
 	if (debug) cout << "Signal reconstruction time " << timer.getTime() << endl;
 
-	return;
+	return evaluation;
 }
 
 /*fills with values*/
@@ -209,7 +214,7 @@ unsigned char CFrelement::retrieve(int timeStamp)
 	for (i= 0;i<outliers;i++){
 		if (timeStamp < outlierSet[i]) break;
 	}
-	return (estimate(signalLength) > 0.5)^(i%2);
+	return (estimate(timeStamp) >= 0.5)^(i%2);
 }
  
 float CFrelement::estimate(int timeStamp)
@@ -217,7 +222,7 @@ float CFrelement::estimate(int timeStamp)
 	float time = (float)timeStamp/signalLength;
 	float estimate = gain;
 	for (int i = 0;i<order;i++){
-		estimate+=2*frelements[i].amplitude*cos(frelements[i].phase+time*frelements[i].frequency*2*M_PI);
+		estimate+=2*frelements[i].amplitude*cos(time*frelements[i].frequency*2*M_PI+frelements[i].phase);
 	}
 	return estimate;
 }
