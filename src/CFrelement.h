@@ -10,6 +10,7 @@
 #include <fftw3.h>
 #include <string.h>
 #include "CTimer.h"
+#include "CFFTPlan.h"
 	
 /**
 @author Tom Krajnik
@@ -24,22 +25,13 @@ typedef struct
 	unsigned int frequency;
 }SFrelement;
 
-typedef struct
-{
-	fftw_plan direct;
-	fftw_plan inverse;
-	double *probability;
-	double *signal;
-	fftw_complex *coeffs;	
-}SPlan;
-
 class CFrelement
 {
 public:
-  CFrelement(int order=0);
+  CFrelement();
   ~CFrelement();
 
-  void reconstruct(unsigned char* signal,SPlan *plan);
+  void reconstruct(unsigned char* signal,CFFTPlan *plan);
 
   /*state estimation: retrieves the state*/
   float estimate(int timeStamp);
@@ -55,14 +47,12 @@ public:
 
   int getLength();
 
-  void build(unsigned char* signal,int signalLength,int modelOrder,SPlan *plan);
+  void build(unsigned char* signal,int signalLength,CFFTPlan *plan);
 
-  /*clears all*/
-  void clear();
   void print();
 
   /*changes the model order*/
-  void update(int modelOrder,SPlan *plan);
+  void update(int modelOrder,CFFTPlan *plan);
 
   double *signal;
 

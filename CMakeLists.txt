@@ -5,6 +5,8 @@ project(fremen)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs)
+#set ( CMAKE_CXX_FLAGS "-O3 -march=native")
+set ( CMAKE_CXX_FLAGS "-ggdb")
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -94,10 +96,16 @@ include_directories(
 
 add_library(frelement src/CFrelement.cpp)
 add_library(fremen_timer src/CTimer.cpp)
+add_library(fftplan src/CFFTPlan.cpp)
+add_library(fremengrid src/CFremenGrid.cpp)
 add_executable(fremen src/fremen.cpp)
+add_executable(frelement_test src/frelement_test.cpp)
 target_link_libraries(frelement fftw3)
-target_link_libraries(fremen frelement)
-target_link_libraries(fremen fremen_timer)
+target_link_libraries(frelement fftplan)
+target_link_libraries(frelement fremen_timer)
+target_link_libraries(fremengrid frelement)
+target_link_libraries(fremen fremengrid)
+target_link_libraries(frelement_test frelement)
 
 ## Declare a cpp library
 # add_library(FreMen

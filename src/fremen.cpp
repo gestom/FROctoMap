@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>	
 #include <cstdlib>	
-#include "CFrelement.h"
+#include "CFremenGrid.h"
 #include "CTimer.h"
 
 using namespace std;
@@ -19,19 +19,30 @@ int main(int argc,char *argv[])
 		signal[signalLength++]=x;
 	}
 	file.close();
-	// the code you wish to time goes here
-	CFrelement frelement;
-	frelement.build(signal,signalLength,atoi(argv[1]));
-	//for (int i=0;i<signalLength;i++) frelement.add(signal[i]);
-	frelement.print();
-	frelement.reconstruct(reconstructed,signalLength);
+	CTimer timer;
+	int gridSize = atoi(argv[2]);
+	int modelOrder = atoi(argv[1]);
+	signalLength=atoi(argv[3]);
 
-//	timer.reset();
-//	for (int i=0;i<signalLength;i++) frelement.retrieve(i); 
-//	cout << "Primitive reconstruction " << timer.getTime()/1000 << endl;
- 
+	CFremenGrid grid(gridSize);
+	for(int i=0;i<gridSize;i++)
+	{
+		for(int j=0;j<signalLength;j++)
+		{ 
+			grid.add(i,signal[j]);
+		}
+	}
+	grid.update(modelOrder,signalLength);
+	cout << "Model update time " << timer.getTime()/atoi(argv[2])/1000 << " ms." << endl;
+	grid.print(0);
+	grid.reconstruct(0,reconstructed);
+
 	int err = 0;
+	int pos = 0;
 	for (int i=0;i<signalLength;i++) err+=abs((int)signal[i]-(int)reconstructed[i]);
-	cout << "Perfect: " << err << endl;
+	for (int i=0;i<signalLength;i++) pos+=(int)signal[i];
+	cout << "Perfect: " << err << " " << pos << endl;
+	free(signal);
+	free(reconstructed);
 	return 0;
 }
