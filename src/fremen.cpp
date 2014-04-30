@@ -43,17 +43,23 @@ int main(int argc,char *argv[])
 	CTimer timer;
 	timer.start();
 	CFremenGrid grid(gridSize);
-	for(int i=0;i<gridSize;i++)
+	for(int j=0;j<signalLength;j++)
 	{
-		for(int j=0;j<signalLength;j++)
+		for(int i=0;i<gridSize;i++)
 		{ 
 			grid.add(i,signal[j]);
 		}
+		if ((j%100)==0) cout << "Filled " << j << endl;
 	}
+	cout << "Model filled " << endl;
+	getc(stdin);
 	timer.reset();
 	grid.update(modelOrder,signalLength);
 	cout << "Model update time " << timer.getTime()/atoi(argv[2])/1000 << " ms." << endl;
 	grid.print(0);
+	grid.save("Grid-all.grid");
+	grid.save("Grid-small.grid",true);
+
 	grid.reconstruct(0,reconstructed);
 
 	int err = 0;

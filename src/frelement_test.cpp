@@ -52,10 +52,16 @@ int main(int argc,char *argv[])
 	cout << "Plan preparation time " << timer.getTime() << " us." << endl; 
 
 	timer.reset();
+	/*for(int i=0;i<frelements;i++){
+		for(int j=0;j<signalLength;j++){
+			frelement[i]->add(signal[j]);
+		}
+	}*/
 	for(int i=0;i<frelements;i++){
 		 if (i%100 == 0) cout << "Calculating " << i << " of " << frelements << endl;
 		 frelement[i]->build(signal,signalLength,&plan);
 	}
+
 	cout << "Model build time " << timer.getTime()/frelements/1000 << " ms." << endl;
 	timer.reset();
 	for(int i=0;i<frelements;i++){
@@ -63,8 +69,11 @@ int main(int argc,char *argv[])
 		frelement[i]->update(order,&plan);
 	}
 	cout << "Model update time " << timer.getTime()/frelements/1000 << " ms." << endl;
+	//frelement[0]->save("test.fre",true);
+	//frelement[0]->load("test.fre");
 	frelement[0]->print();
 	float eval = frelement[0]->reconstruct(reconstructed,&plan,false);
+
 	for (int i = 0;i<signalLength;i++){
 //		 reconstructed[i] = frelement[0]->retrieve(i);
 //		 cout << "Reconstructed: " << frelement[0]->estimate(i) << endl;

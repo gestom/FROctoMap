@@ -30,6 +30,20 @@ void CFremenGrid::update(int order,int signalLengthi)
 	}
 }
 
+void CFremenGrid::save(const char* name,bool lossy)
+{
+	FILE* f=fopen(name,"w");
+	for (int i=0;i<numCells;i++) cellArray[i]->save(f,lossy);
+	fclose(f);
+}
+
+void CFremenGrid::load(const char* name)
+{
+	FILE* f=fopen(name,"r");
+	for (int i=0;i<numCells;i++) cellArray[i]->load(f);
+	fclose(f);
+}
+
 void CFremenGrid::print(int number)
 {
 	cellArray[number]->print();
@@ -43,4 +57,14 @@ void CFremenGrid::reconstruct(int number,unsigned char *reconstructed)
 void CFremenGrid::add(unsigned int index,unsigned char value)
 {
 	cellArray[index]->add(value);
+}
+
+unsigned char CFremenGrid::retrieve(unsigned int index,unsigned int timeStamp)
+{
+	return cellArray[index]->retrieve(timeStamp);
+}
+
+float CFremenGrid::estimate(unsigned int index,unsigned int timeStamp)
+{
+	return cellArray[index]->estimate(timeStamp);
 }
