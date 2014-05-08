@@ -69,7 +69,7 @@ int main(int argc,char *argv[])
 		frelement[i]->update(order,&plan);
 	}
 	cout << "Model update time " << timer.getTime()/frelements/1000 << " ms." << endl;
-	//frelement[0]->save("test.fre",true);
+	frelement[0]->save("test.fre",true);
 	//frelement[0]->load("test.fre");
 	frelement[0]->print();
 	float eval = frelement[0]->reconstruct(reconstructed,&plan,false);
