@@ -36,7 +36,6 @@ public:
   void print(int number);
   void save(const char*name,bool lossy = false);
   void load(const char*name);
-  void oldLoad(const char*name);
   double *signal;
 
 //private:

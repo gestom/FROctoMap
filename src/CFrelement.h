@@ -50,11 +50,9 @@ public:
   void print();
 
   int save(FILE* file,bool lossy = false);
-  int oldLoad(FILE* file);
   int load(FILE* file);
   int save(char* name,bool lossy = false);
   int load(char* name);
-  int oldLoad(char* name);
 
   /*changes the model order*/
   void update(int modelOrder,CFFTPlan *plan);
