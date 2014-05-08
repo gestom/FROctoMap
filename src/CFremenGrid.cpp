@@ -61,21 +61,6 @@ void CFremenGrid::load(const char* name)
 	fclose(f);
 }
 
-void CFremenGrid::oldLoad(const char* name)
-{
-	int read = 0;
-	FILE* f=fopen(name,"r");
-	for (int i=0;i<numCells;i++)  free(cellArray[i]);
-	free(cellArray);
-	if (fread(&numCells,sizeof(int),1,f)!=1) printf("Warning ! Grid size could not be read.\n") ;
-	fprintf(stdout,"Cells %i\n",numCells);
-	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement));
-	for (int i=0;i<numCells;i++) cellArray[i] = new CFrelement();
-	for (int i=0;i<numCells;i++) cellArray[i]->oldLoad(f);
-	signalLength=cellArray[0]->signalLength;
-	fclose(f);
-}
-
 void CFremenGrid::print(int number)
 {
 	if (cellArray[number]->order > 0 || cellArray[number]->outliers > 0){

@@ -195,11 +195,16 @@ void CFrelement::print()
 	int errs = 0;
 	for (int i=0;i<outliers/2;i++) errs+=(outlierSet[2*i+1]-outlierSet[2*i]);
 	if (outliers%2 == 1) errs+=signalLength-outlierSet[outliers-1];
+<<<<<<< HEAD
 	std::cout << "Model order " << order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << signalLength << " ";
 	if (order > 0) std::cout  << endl;
+=======
+	std::cout << "Model order " << order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << sizeof(this)<< endl;
+>>>>>>> 59564bb1b88f35f895f503339a2cd8792b505808
 	float ampl = gain;
 	for (int i = 0;i<order;i++){
-		std::cout << "Frelement " << i << " " << frelements[i].amplitude << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
+		std::cout << "Frelement " << i << " " << ampl << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
+		ampl+=frelements[i].amplitude*frelements[i].amplitude;
 	}
 	std::cout << "Outlier set size " << outliers << ":";
 	for (int i = 0;i<outliers;i++) std::cout << " " << outlierSet[i];
@@ -219,7 +224,10 @@ unsigned char CFrelement::retrieve(int timeStamp)
 int CFrelement::save(char* name,bool lossy)
 {
 	FILE* file = fopen(name,"w");
+<<<<<<< HEAD
 	fwrite(&signalLength,sizeof(unsigned int),1,file);
+=======
+>>>>>>> 59564bb1b88f35f895f503339a2cd8792b505808
 	save(file,lossy);
 	fclose(file);
 }
@@ -233,12 +241,6 @@ int CFrelement::load(char* name)
 	return 0;
 }
 
-int CFrelement::oldLoad(char* name)
-{
-	FILE* file = fopen(name,"r");
-	load(file);
-	fclose(file);
-}
 
 int CFrelement::save(FILE* file,bool lossy)
 {
@@ -279,25 +281,6 @@ int CFrelement::load(FILE* file)
 		ret+=fread(outlierSet,sizeof(unsigned int),outliers,file);
 		if (ret != 4+outliers+order) ret = -1; else ret = 0;
 	}
-	return ret;
-}
-
-int CFrelement::oldLoad(FILE* file)
-{
-	int ret =0;
-	unsigned int ordera;
-	ret+=fread(&outliers,sizeof(unsigned int),1,file);
-	ret+=fread(&ordera,sizeof(unsigned int),1,file);
-	order = (unsigned char) ordera;
-	ret+=fread(&gain,sizeof(float),1,file);
-	ret+=fread(&signalLength,sizeof(unsigned int),1,file);
-	free(outlierSet);
-	free(frelements);
-	frelements = (SFrelement*) malloc(order*sizeof(SFrelement));
-	outlierSet = (unsigned int*)malloc(outliers*(sizeof(unsigned int)));
-	ret+=fread(frelements,sizeof(SFrelement),order,file);
-	ret+=fread(outlierSet,sizeof(unsigned int),outliers,file);
-	if (ret != 4+outliers+order) ret = -1; else ret = 0;
 	return ret;
 }
 
