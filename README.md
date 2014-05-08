@@ -9,6 +9,7 @@ The proposed method allows not only for efficient representation, but also relia
 This repository contains the spatio-temporal mapping framework intended for ROS.
 
 [1] A. Hornung,. K.M. Wurm, M. Bennewitz, C. Stachniss, and W. Burgard, "OctoMap: An Efficient Probabilistic 3D Mapping Framework Based on Octrees" in Autonomous Robots, 2013; DOI: 10.1007/s10514-012-9321-0.
+
 [2] T. Krajnik, et al.: "Spectral Analysis for Long-Term Robotic Mapping", to appear at International Conference on Robotics and Automation 2014. 
 
 
