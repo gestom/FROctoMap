@@ -25,4 +25,4 @@ How to use the software:
 4)  You can also predict or reconstruct the Octomap by providing relevant timestamp (currently a simple sequence number) via service '/generate_octomap'.
 
 This is just a demo intended for review purposes of TAROS 2014. 
-The full version will be released provided after the paper presentation. 
+The full version will be released after the paper presentation (if it's accepted). 
