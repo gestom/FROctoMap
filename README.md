@@ -17,8 +17,11 @@ This repository contains the spatio-temporal mapping framework intended for ROS.
 How to use the software:
 
 1)  Get a rosbag with octomaps. You can get one here: http://purl.org/robotics/octomaps
+
 2)  Launch the FRoctomap framework: roslaunch fremen froctomap.launch 
+
 3)  Now, you can save and update the fremen model via services '/save_grid' and  '/update_grid'. For parameters, check our paper.
+
 4)  You can also predict or reconstruct the Octomap by providing relevant timestamp (currently a simple sequence number) via service '/generate_octomap'.
 
 This is just a demo intended for review purposes of TAROS 2014. 
