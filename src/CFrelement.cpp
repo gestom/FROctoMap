@@ -195,12 +195,8 @@ void CFrelement::print()
 	int errs = 0;
 	for (int i=0;i<outliers/2;i++) errs+=(outlierSet[2*i+1]-outlierSet[2*i]);
 	if (outliers%2 == 1) errs+=signalLength-outlierSet[outliers-1];
-<<<<<<< HEAD
 	std::cout << "Model order " << order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << signalLength << " ";
 	if (order > 0) std::cout  << endl;
-=======
-	std::cout << "Model order " << order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << sizeof(this)<< endl;
->>>>>>> 59564bb1b88f35f895f503339a2cd8792b505808
 	float ampl = gain;
 	for (int i = 0;i<order;i++){
 		std::cout << "Frelement " << i << " " << ampl << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
@@ -224,10 +220,7 @@ unsigned char CFrelement::retrieve(int timeStamp)
 int CFrelement::save(char* name,bool lossy)
 {
 	FILE* file = fopen(name,"w");
-<<<<<<< HEAD
 	fwrite(&signalLength,sizeof(unsigned int),1,file);
-=======
->>>>>>> 59564bb1b88f35f895f503339a2cd8792b505808
 	save(file,lossy);
 	fclose(file);
 }
