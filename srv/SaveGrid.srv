@@ -1,0 +1,4 @@
+string filename
+bool lossy
+---
+int64 size

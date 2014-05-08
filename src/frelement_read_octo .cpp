@@ -11,6 +11,8 @@
 #include "CFremenGrid.h"
 #include "CTimer.h"
 
+
+//The TF must be corrected and then these values must be changed!!!
 #define MAX_X 54
 #define MAX_Y 42
 #define MAX_Z 94
@@ -26,13 +28,6 @@ using namespace std;
 using namespace octomap;
 
 CFremenGrid *grid_ptr;
-ros::Publisher *octomap_pub_ptr, *markers_pub_ptr;
-
-//Parameters
-int modelOrder;
-double resolution, m_colorFactor;
-string filename;
-long counter = 0;
 
 std_msgs::ColorRGBA heightMapColor(double h)
 {
@@ -97,57 +92,13 @@ std_msgs::ColorRGBA heightMapColor(double h)
 	return color;
 }
 
-void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
-{
-  
-  AbstractOcTree* tree = msgToMap(*msg);
-
-  if(tree){
-
-  OcTree* octree = dynamic_cast<OcTree*>(tree);
-  int signalLength = 0;
-  
-  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
-    for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
-      for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-	
-	  OcTreeNode* n = octree->search(i,j,w);
-	  
-	  if(n){
-	    
-	    if(octree->isNodeOccupied(n))
-	      grid_ptr->add(signalLength,1);
-	    else
-	      grid_ptr->add(signalLength,0);
-	  }
-	  else{
-	    grid_ptr->add(signalLength,0);
-	  }
-	  
-	  signalLength++;
-	}
-      }
-    }
-    ROS_INFO("Grid updated! -> Iteration: %lu", counter);
-    
-  }else{
-    ROS_ERROR("Octomap conversion error");
-    exit(1);
-  }
-  
-  counter++;
-  delete tree;
-}
 
 void timeCallback(const std_msgs::Int32::ConstPtr& msg)
 {
-  //Save the 3D grid:
-  grid_ptr->save(filename.c_str(), false);
-  ROS_INFO("3D Grid saved!");
-  
+
   octomap_msgs::Octomap bmap_msg;
-  OcTree octree (resolution);
-  
+  OcTree octree (resolution); 
+
   int cnt = 0;
 
   //Create pointcloud:
@@ -156,13 +107,21 @@ void timeCallback(const std_msgs::Int32::ConstPtr& msg)
   
   geometry_msgs::Point32 test_point;
 
-  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
-    for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
-      for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-	
+
+  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution)
+  {
+    for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution)
+    {
+      for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution)
+      {
 	if(grid_ptr->retrieve(cnt, msg->data))
+	{
+	  test_point.x = i;
+	  test_point.y = j;
+	  test_point.z = w;
+	  fremenCloud.points.push_back(test_point);
 	  octoCloud.push_back(i,j,w);
-	
+	}
 	cnt++;
       }
     }
@@ -171,15 +130,15 @@ void timeCallback(const std_msgs::Int32::ConstPtr& msg)
   //Origin
   point3d origin(0.0,0.0,0.0);
 
-  //Insert point cloud in octomap:
+  //Insert point cloud in octomap
   octree.insertPointCloud(octoCloud, origin, -1., true, false);	
-  
-  //init visualization markers:
+
+  // init visualization markers:
   visualization_msgs::MarkerArray occupiedNodesVis;
   
   unsigned int m_treeDepth = octree.getTreeDepth();
   
-  //each array stores all cubes of a different size, one for each depth level:
+  // each array stores all cubes of a different size, one for each depth level:
   occupiedNodesVis.markers.resize(m_treeDepth + 1);
   
   geometry_msgs::Point cubeCenter;
@@ -231,10 +190,11 @@ void timeCallback(const std_msgs::Int32::ConstPtr& msg)
   fremenCloud.header.stamp = ros::Time::now();
   
   octomap_pub_ptr->publish(bmap_msg);
+  cloud_pub_ptr->publish(fremenCloud);
   markers_pub_ptr->publish(occupiedNodesVis);
   
   ROS_INFO("Octomap published!");
-
+  
 }
 
 int main(int argc,char *argv[])
@@ -246,24 +206,21 @@ int main(int argc,char *argv[])
   n.param("modelOrder", modelOrder, 0);
   n.param("resolution", resolution, 0.05);
   n.param("colorFactor", m_colorFactor, 0.8);
-  n.param<std::string>("filename", filename, "/home/joao/catkin_ws/week");
+  n.param<std::string>("filename", filename, "/home/joao/catkin_ws/predict2");
 
   //Fremen Grid:
   CFremenGrid grid(MAX_X * MAX_Y * MAX_Z);
+  load(grid);
+  ROS_INFO("File loaded...");
   grid_ptr = &grid;
-  
-  
+
   //Subscribers:
-  ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
   ros::Subscriber sub_time = n.subscribe("/octomap_timestamp", 1000, timeCallback);
-  
-  
-  //Publishers:
+
+  //Publishers::
   ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/octomap_fremen", 100);
-  octomap_pub_ptr = &octomap_pub;
-  
   ros::Publisher markers_pub = n.advertise<visualization_msgs::MarkerArray>("/octomap_fremen_markers", 100);
-  markers_pub_ptr = &markers_pub;
+  ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud>("/fremen_cloud", 100);
 
   ros::spin();
   

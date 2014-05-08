@@ -39,17 +39,20 @@ public:
   /*state estimation: retrieves the state*/
   unsigned char retrieve(int timeStamp);
 
-  /*fills with values*/
-  void fill(unsigned char values[],int number);
-
-  /*adds stuff*/
+  /*adds a single measurement*/
   void add(unsigned char value);
 
+  /*gets length of the stored signal*/
   int getLength();
 
   void build(unsigned char* signal,int signalLength,CFFTPlan *plan);
 
   void print();
+
+  int save(FILE* file,bool lossy = false);
+  int load(FILE* file);
+  int save(char* name,bool lossy = false);
+  int load(char* name);
 
   /*changes the model order*/
   void update(int modelOrder,CFFTPlan *plan);

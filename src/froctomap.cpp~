@@ -11,6 +11,10 @@
 #include "CFremenGrid.h"
 #include "CTimer.h"
 
+#include "fremen/UpdateGrid.h"
+#include "fremen/SaveGrid.h"
+#include "fremen/GenerateOctomap.h"
+
 #define MAX_X 54
 #define MAX_Y 42
 #define MAX_Z 94
@@ -29,121 +33,135 @@ CFremenGrid *grid_ptr;
 ros::Publisher *octomap_pub_ptr, *markers_pub_ptr;
 
 //Parameters
-int modelOrder;
 double resolution, m_colorFactor;
 string filename;
-long counter = 0;
+long signalLength = 0;
 
-std_msgs::ColorRGBA heightMapColor(double h)
-{
+std_msgs::ColorRGBA heightMapColor(double h){
 
-	std_msgs::ColorRGBA color;
-	color.a = 1.0;
-	// blend over HSV-values (more colors)
+  std_msgs::ColorRGBA color;
+  color.a = 1.0;
+  // blend over HSV-values (more colors)
 
-	double s = 1.0;
-	double v = 1.0;
+  double s = 1.0;
+  double v = 1.0;
 
-	h -= floor(h);
-	h *= 6;
-	int i;
-	double m, n, f;
+  h -= floor(h);
+  h *= 6;
+  int i;
+  double m, n, f;
 
-	i = floor(h);
-	f = h - i;
-	if (!(i & 1)) f = 1 - f; // if i is even
-	m = v * (1 - s);
-	n = v * (1 - s * f);
+  i = floor(h);
+  f = h - i;
+  if (!(i & 1)) f = 1 - f; // if i is even
+  m = v * (1 - s);
+  n = v * (1 - s * f);
 
-	switch (i) {
-		case 6:
-		case 0:
-			color.r = v;
-			color.g = n;
-			color.b = m;
-			break;
-		case 1:
-			color.r = n;
-			color.g = v;
-			color.b = m;
-			break;
-		case 2:
-			color.r = m;
-			color.g = v;
-			color.b = n;
-			break;
-		case 3:
-			color.r = m;
-			color.g = n;
-			color.b = v;
-			break;
-		case 4:
-			color.r = n;
-			color.g = m;
-			color.b = v;
-			break;
-		case 5:
-			color.r = v;
-			color.g = m;
-			color.b = n;
-			break;
-		default:
-			color.r = 1;
-			color.g = 0.5;
-			color.b = 0.5;
-			break;
-	}
-
-	return color;
+  switch (i) {
+    case 6:
+    case 0:
+      color.r = v;
+      color.g = n;
+      color.b = m;
+      break;
+    case 1:
+      color.r = n;
+      color.g = v;
+      color.b = m;
+      break;
+    case 2:
+      color.r = m;
+      color.g = v;
+      color.b = n;
+      break;
+    case 3:
+      color.r = m;
+      color.g = n;
+      color.b = v;
+      break;
+    case 4:
+      color.r = n;
+      color.g = m;
+      color.b = v;
+      break;
+    case 5:
+      color.r = v;
+      color.g = m;
+      color.b = n;
+      break;
+    default:
+      color.r = 1;
+      color.g = 0.5;
+      color.b = 0.5;
+      break;
+    
+  }
+  
+  return color;
 }
 
-void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
-{
-  
+
+void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg){
+
   AbstractOcTree* tree = msgToMap(*msg);
 
   if(tree){
 
-  OcTree* octree = dynamic_cast<OcTree*>(tree);
-  int signalLength = 0;
+    OcTree* octree = dynamic_cast<OcTree*>(tree);
   
-  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
-    for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
-      for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-	
+    int cnt = 0;
+    for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
+      for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
+	for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
+
 	  OcTreeNode* n = octree->search(i,j,w);
-	  
+
 	  if(n){
-	    
 	    if(octree->isNodeOccupied(n))
-	      grid_ptr->add(signalLength,1);
+	      grid_ptr->add(cnt,1);
 	    else
-	      grid_ptr->add(signalLength,0);
+	      grid_ptr->add(cnt,0);
+	  }else{
+	    grid_ptr->add(cnt,0);
 	  }
-	  else{
-	    grid_ptr->add(signalLength,0);
-	  }
-	  
-	  signalLength++;
+	  cnt++;
 	}
       }
     }
-    ROS_INFO("Grid updated! -> Iteration: %lu", counter);
+    
+    ROS_INFO("3D Grid Updated! -> Iteration: %lu", signalLength);
     
   }else{
-    ROS_ERROR("Octomap conversion error");
+    ROS_ERROR("Octomap conversion error!");
     exit(1);
   }
-  
-  counter++;
+
+  signalLength++;
   delete tree;
+  
 }
 
-void timeCallback(const std_msgs::Int32::ConstPtr& msg)
-{
-  //Save the 3D grid:
-  grid_ptr->save(filename.c_str(), false);
+bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res){
+  
+  ROS_INFO("Teste: %d", req.lossy);
+  grid_ptr->save(req.filename.c_str(), (bool) req.lossy);
+  res.size = signalLength;
   ROS_INFO("3D Grid saved!");
+
+  return true;
+}
+
+bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Response &res){
+  
+  ROS_INFO("Teste: %d", req.lossy);
+  grid_ptr->update((int) req.order, signalLength);
+  res.size = signalLength;
+  ROS_INFO("3D Grid updated and saved!");
+
+  return true;
+}
+
+bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOctomap::Response &res){
   
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
@@ -160,7 +178,7 @@ void timeCallback(const std_msgs::Int32::ConstPtr& msg)
     for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
       for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
 	
-	if(grid_ptr->retrieve(cnt, msg->data))
+	if(grid_ptr->retrieve(cnt, req.stamp))
 	  octoCloud.push_back(i,j,w);
 	
 	cnt++;
@@ -234,16 +252,19 @@ void timeCallback(const std_msgs::Int32::ConstPtr& msg)
   markers_pub_ptr->publish(occupiedNodesVis);
   
   ROS_INFO("Octomap published!");
+  
+  res.result = true;
 
+  return true;
 }
+
 
 int main(int argc,char *argv[])
 {
   
-  ros::init(argc, argv, "frelement_octomap");
+  ros::init(argc, argv, "froctomap");
   ros::NodeHandle n;
 
-  n.param("modelOrder", modelOrder, 0);
   n.param("resolution", resolution, 0.05);
   n.param("colorFactor", m_colorFactor, 0.8);
   n.param<std::string>("filename", filename, "/home/joao/catkin_ws/week");
@@ -255,15 +276,18 @@ int main(int argc,char *argv[])
   
   //Subscribers:
   ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
-  ros::Subscriber sub_time = n.subscribe("/octomap_timestamp", 1000, timeCallback);
-  
   
   //Publishers:
-  ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/octomap_fremen", 100);
+  ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
   octomap_pub_ptr = &octomap_pub;
   
-  ros::Publisher markers_pub = n.advertise<visualization_msgs::MarkerArray>("/octomap_fremen_markers", 100);
+  ros::Publisher markers_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_markers", 100);
   markers_pub_ptr = &markers_pub;
+  
+  //Services:
+  ros::ServiceServer generate_service = n.advertiseService("generate_octomap", generate_octomap);
+  ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
+  ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
 
   ros::spin();
   
