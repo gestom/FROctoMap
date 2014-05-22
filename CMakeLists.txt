@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(fremen)
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap_server)
 set ( CMAKE_CXX_FLAGS "-O3 -march=native")
 
 include_directories(${OCTOMAP_INCLUDE_DIRS}) 
