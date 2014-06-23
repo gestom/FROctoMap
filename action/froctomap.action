@@ -1,0 +1,13 @@
+# Define the goal
+string name_action
+int64 stamp
+string filename
+int64 order
+float64 precision
+bool lossy
+---
+# Define the result
+bool sucessfull
+---
+# Define a feedback message
+

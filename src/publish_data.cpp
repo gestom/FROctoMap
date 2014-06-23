@@ -13,10 +13,11 @@ int main(int argc, char** argv){
 
   ros::init(argc, argv, "publish_data");
   ros::NodeHandle n;
+  ros::NodeHandle nh("~");
   
   //Name of the file received as parameter
-  n.param<std::string>("filename", filename, "week.3d");
-  n.param<std::string>("directory", directory, "/home/joao/catkin_ws/");
+  nh.param<std::string>("filename", filename, "week.3d");
+  nh.param<std::string>("directory", directory, "/home/joao/catkin_ws/");
   
   directory += filename;
   
