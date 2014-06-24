@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "fremen/GenerateOctomap.h"
+#include "fremen/RetrieveOctomap.h"
 #include <cstdlib>
 
 int main(int argc, char **argv)
@@ -12,9 +12,9 @@ int main(int argc, char **argv)
   }
 
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<fremen::GenerateOctomap>("generate_octomap");
+  ros::ServiceClient client = n.serviceClient<fremen::RetrieveOctomap>("retrieve_octomap");
   
-  fremen::GenerateOctomap srv;
+  fremen::RetrieveOctomap srv;
   
   srv.request.stamp = atoi(argv[1]);
   

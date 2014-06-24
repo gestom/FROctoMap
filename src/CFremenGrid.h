@@ -41,6 +41,7 @@ public:
 //private:
 	CFrelement **cellArray;
 	int numCells;
+	int xDim,yDim,zDim;
 	int order;
 	unsigned int signalLength;
 	CFFTPlan *plan;
