@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   fremen::UpdateGrid srv;
   
   srv.request.order = atoi(argv[1]);
-  srv.request.lossy = atof(argv[2]);
+  srv.request.precision = atof(argv[2]);
   srv.request.lossy = atoi(argv[3]);
   
   if (client.call(srv)){

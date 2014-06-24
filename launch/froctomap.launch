@@ -6,7 +6,4 @@
     <param name="resolution" value="0.05" />
     <param name="colorFactor" value="0.8" />
   </node>
-  
-
-  
 </launch>

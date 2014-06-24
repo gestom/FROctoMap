@@ -139,7 +139,6 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 
 bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
 {
-	ROS_INFO("Teste: %d", req.lossy);
 	grid_ptr->save(req.filename.c_str(), (bool) req.lossy);
 	res.size = signalLength;
 	ROS_INFO("3D Grid saved!");
@@ -148,7 +147,6 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 
 bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Response &res)
 {
-  ROS_INFO("Teste: %d", req.lossy);
   grid_ptr->update((int) req.order, signalLength);
   res.size = signalLength;
   ROS_INFO("3D Grid updated and saved!");
