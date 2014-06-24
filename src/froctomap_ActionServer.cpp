@@ -4,9 +4,11 @@
 #include "fremen/GenerateOctomap.h"
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
+#include "fremen/RetrieveOctomap.h"
+#include "fremen/EstimateOctomap.h"
 
 
-ros::ServiceClient *predict_client_ptr, *update_client_ptr, *save_client_ptr;
+ros::ServiceClient *predict_client_ptr, *update_client_ptr, *save_client_ptr, *estimate_client_ptr, *retrieve_client_ptr;
 
 typedef actionlib::SimpleActionServer<fremen::froctomapAction> Server;
 
@@ -59,7 +61,32 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
       ROS_ERROR("Failed to call service save_grid");
       as->setAborted();
     }
-    
+  }else if(goal->name_action == "recover_octomap"){
+    ROS_INFO("Recovering...!");
+    fremen::RetrieveOctomap srv;
+    srv.request.stamp = goal->stamp;
+  
+    if (retrieve_client_ptr->call(srv)){
+      ROS_INFO("Octomap retrieved!");
+      as->setSucceeded();
+    }else{
+      ROS_ERROR("Failed to call service RetrieveOctomap");
+      as->setAborted();
+    }
+  }else if(goal->name_action == "estimate_octomap"){
+    ROS_INFO("Estimating...!");
+    fremen::EstimateOctomap srv;
+    srv.request.stamp = goal->stamp;
+    srv.request.minProbability = goal->minprobability;
+    srv.request.maxProbability = goal->maxprobability;
+  
+    if (estimate_client_ptr->call(srv)){
+      ROS_INFO("Octomap Estimated");
+      as->setSucceeded();
+    }else{
+      ROS_ERROR("Failed to estimate octomap");
+      as->setAborted();
+    }
   }else{
     as->setAborted();
   }
@@ -80,6 +107,12 @@ int main(int argc,char *argv[])
   update_client_ptr = &update_client;
   ros::ServiceClient save_client = n.serviceClient<fremen::SaveGrid>("save_grid");
   save_client_ptr = &save_client;
+  ros::ServiceClient estimate_client = n.serviceClient<fremen::EstimateOctomap>("estimate_octomap");
+  estimate_client_ptr = &estimate_client;
+  ros::ServiceClient retrieve_client = n.serviceClient<fremen::RetrieveOctomap>("retrieve_octomap");
+  retrieve_client_ptr = &retrieve_client;
+  
+  
   
   //Server:
   Server server(n, "froctomap_action_server", boost::bind(&execute, _1, &server), false);
