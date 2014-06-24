@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(fremen)
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap_server)
+find_package(catkin REQUIRED COMPONENTS  pcl_conversions pcl_ros roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap_server sensor_msgs)
 set ( CMAKE_CXX_FLAGS "-O3 -march=native")
 
 include_directories(${OCTOMAP_INCLUDE_DIRS}) 
@@ -9,7 +9,8 @@ link_libraries( ${OCTOMAP_LIBRARIES})
 
 add_service_files(
 		FILES
-		GenerateOctomap.srv
+		RetrieveOctomap.srv
+		EstimateOctomap.srv
 		SaveGrid.srv
 		UpdateGrid.srv
 )
@@ -19,7 +20,9 @@ generate_messages(
 	std_msgs
 )
 
-catkin_package(CATKIN_DEPENDS roscpp message_runtime std_msgs genmsg)
+catkin_package(CATKIN_DEPENDS roscpp pcl_conversions pcl_ros message_runtime std_msgs genmsg)
+
+include_directories(${catkin_INCLUDE_DIRS}) 
 
 add_executable(save_client src/save_client.cpp)
 add_dependencies(save_client genmsg fremen_generate_messages)
@@ -36,6 +39,7 @@ add_dependencies(octomap_client  genmsg fremen_generate_messages)
 add_executable(froctomap src/froctomap.cpp)
 add_executable(octomap_markers src/octomap_markers.cpp)
 add_executable(publish_data src/publish_data.cpp)
+add_executable(transform src/transform.cpp)
 
 add_library(frelement src/CFrelement.cpp)
 add_library(fremen_timer src/CTimer.cpp)
@@ -49,7 +53,7 @@ target_link_libraries(fremengrid frelement)
 target_link_libraries(froctomap fremengrid)
 target_link_libraries(publish_data ${catkin_LIBRARIES})
 
-
+target_link_libraries(transform ${catkin_LIBRARIES})
 target_link_libraries(froctomap ${catkin_LIBRARIES})
 target_link_libraries(octomap_markers ${catkin_LIBRARIES})
 
