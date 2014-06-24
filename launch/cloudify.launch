@@ -33,10 +33,6 @@
     <remap from="cloud_in" to="/camera/depth_registered/points2" />
 
   </node>
-  
-  <node pkg="publish_data" type="publish_data" name="publish_data" cwd="ROS_HOME" output="screen">
-    <param name="directory" value="/home/joao/catkin_ws/" />
-    <param name="filename" value="chunk23-1.3d" />
-  </node>
+
   
 </launch>
