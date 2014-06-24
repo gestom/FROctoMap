@@ -12,7 +12,7 @@ typedef actionlib::SimpleActionServer<fremen::froctomapAction> Server;
 
 void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 {
-
+  ROS_INFO("aseyhuj!");
   if(goal->name_action == "predict"){
     ROS_INFO("Predicting...!");
     fremen::GenerateOctomap srv;

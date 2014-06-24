@@ -30,7 +30,7 @@ int main(int argc,char *argv[])
   goal.lossy = atoi(argv[6]);
   
   client.sendGoal(goal);
-  client.waitForResult(ros::Duration(1.0));
+  client.waitForResult(ros::Duration(5.0));
   
   if (client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     ROS_INFO("%s action done!!!", argv[1]);
