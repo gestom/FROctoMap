@@ -54,11 +54,6 @@ add_executable(froctomap src/froctomap.cpp)
 add_executable(octomap_markers src/octomap_markers.cpp)
 add_executable(publish_data src/publish_data.cpp)
 add_executable(transform src/transform.cpp)
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
 
 add_library(frelement src/CFrelement.cpp)
 add_library(fremen_timer src/CTimer.cpp)
@@ -71,11 +66,8 @@ target_link_libraries(frelement fremen_timer)
 target_link_libraries(fremengrid frelement)
 target_link_libraries(froctomap fremengrid)
 
-<<<<<<< HEAD
-=======
 target_link_libraries(publish_data ${catkin_LIBRARIES})
 
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
 target_link_libraries(transform ${catkin_LIBRARIES})
 target_link_libraries(froctomap ${catkin_LIBRARIES})
 target_link_libraries(octomap_markers ${catkin_LIBRARIES})

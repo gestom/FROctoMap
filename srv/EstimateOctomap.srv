@@ -1,9 +1,6 @@
 int64 stamp
 float64 minProbability 
 float64 maxProbability 
-<<<<<<< HEAD
 int8 morphology 
-=======
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
 ---
 bool result

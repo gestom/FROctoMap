@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <fremen/froctomapAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include "fremen/GenerateOctomap.h"
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
 #include "fremen/RetrieveOctomap.h"
@@ -17,10 +16,10 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 
   if(goal->name_action == "predict"){
     ROS_INFO("Predicting...!");
-    fremen::GenerateOctomap srv;
-    srv.request.stamp = goal->stamp;
+   // fremen::GenerateOctomap srv;
+    //srv.request.stamp = goal->stamp;
   
-    if(predict_client_ptr->call(srv)){
+   /* if(predict_client_ptr->call(srv)){
       if(srv.response.result){
 	ROS_INFO("Octomap generated!");
 	as->setSucceeded();
@@ -31,7 +30,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
     }else{
       ROS_ERROR("Failed to call service generate_octomap");
       as->setAborted();
-      }
+      }*/
       
   }else if(goal->name_action == "update"){
     ROS_INFO("Updating...!");
@@ -101,8 +100,8 @@ int main(int argc,char *argv[])
   ros::NodeHandle n;
   
   //Services:
-  ros::ServiceClient predict_client = n.serviceClient<fremen::GenerateOctomap>("generate_octomap");
-  predict_client_ptr = &predict_client;
+ // ros::ServiceClient predict_client = n.serviceClient<fremen::GenerateOctomap>("generate_octomap");
+ // predict_client_ptr = &predict_client;
   ros::ServiceClient update_client = n.serviceClient<fremen::UpdateGrid>("update_grid");
   update_client_ptr = &update_client;
   ros::ServiceClient save_client = n.serviceClient<fremen::SaveGrid>("save_grid");

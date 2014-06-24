@@ -16,15 +16,9 @@
 #include "fremen/RetrieveOctomap.h"
 #include "fremen/EstimateOctomap.h"
 
-<<<<<<< HEAD
 #define DIM_X 201 
 #define DIM_Y 201
 #define DIM_Z 101
-=======
-#define MAX_X 201 
-#define MAX_Y 201
-#define MAX_Z 101
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
 
 #define LIM_MIN_X -5.0
 #define LIM_MIN_Y -5.0
@@ -212,7 +206,6 @@ bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOc
   {
     double size = octree.getNodeSize(i);
     occupiedNodesVis.markers[i].header.frame_id = "/map";
-<<<<<<< HEAD
     occupiedNodesVis.markers[i].header.stamp = ros::Time::now();
     occupiedNodesVis.markers[i].ns = "map";
     occupiedNodesVis.markers[i].id = i;
@@ -314,8 +307,6 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   {
     double size = octree.getNodeSize(i);
     occupiedNodesVis.markers[i].header.frame_id = "/map";
-=======
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
     occupiedNodesVis.markers[i].header.stamp = ros::Time::now();
     occupiedNodesVis.markers[i].ns = "map";
     occupiedNodesVis.markers[i].id = i;
@@ -348,11 +339,7 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   fremenCloud.header.stamp = ros::Time::now();
   
   octomap_pub_ptr->publish(bmap_msg);
-<<<<<<< HEAD
-  estimate_pub_ptr->publish(occupiedNodesVis);
-=======
   retrieve_pub_ptr->publish(occupiedNodesVis);
->>>>>>> 5142ae50e6d6e525404da71fb1edfeef79dcb1dc
   
   ROS_INFO("Octomap published!");
   
@@ -360,98 +347,6 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 
   return true;
 }
-
-bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
-{
-  octomap_msgs::Octomap bmap_msg;
-  OcTree octree (resolution);
-  
-
-  //Create pointcloud:
-  octomap::Pointcloud octoCloud;
-  sensor_msgs::PointCloud fremenCloud;
-  
-  geometry_msgs::Point32 test_point;
-  int cnt = 0;
-  float estimate = 0;
-  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
-	  for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
-		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-			  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
-			  estimate = grid_ptr->estimate(cnt, req.stamp);
-			  if(estimate >req.minProbability && estimate< req.maxProbability)
-			  {
-				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
-				  octree.updateNode(ptt,true,true);
-			  }
-			  cnt++;
-		  }
-	  }
-  }
-  //Update grid
-  octree.updateInnerOccupancy();
-  
-  //init visualization markers:
-  visualization_msgs::MarkerArray occupiedNodesVis;
-  unsigned int m_treeDepth = octree.getTreeDepth();
-  
-  //each array stores all cubes of a different size, one for each depth level:
-  occupiedNodesVis.markers.resize(m_treeDepth + 1);
-  geometry_msgs::Point cubeCenter;
-  
-  std_msgs::ColorRGBA m_color;
-  m_color.r = 0.0;
-  m_color.g = 0.0;
-  m_color.b = 1.0;
-  m_color.a = 1.0;
-  
-  for (unsigned i = 0; i < occupiedNodesVis.markers.size(); ++i) 
-  {
-    double size = octree.getNodeSize(i);
-    occupiedNodesVis.markers[i].header.frame_id = "/map";
-    occupiedNodesVis.markers[i].header.stamp = ros::Time::now();
-    occupiedNodesVis.markers[i].ns = "map";
-    occupiedNodesVis.markers[i].id = i;
-    occupiedNodesVis.markers[i].type = visualization_msgs::Marker::CUBE_LIST;
-    occupiedNodesVis.markers[i].scale.x = size;
-    occupiedNodesVis.markers[i].scale.y = size;
-    occupiedNodesVis.markers[i].scale.z = size;
-    occupiedNodesVis.markers[i].color = m_color;
-  }
-
-  for(OcTree::leaf_iterator it = octree.begin_leafs(), end = octree.end_leafs(); it != end; ++it)
-  {
-	  if(it != NULL && octree.isNodeOccupied(*it))
-	  {
-		  unsigned idx = it.getDepth();
-		  cubeCenter.x = it.getX();
-		  cubeCenter.y = it.getY();
-		  cubeCenter.z = it.getZ();
-		  occupiedNodesVis.markers[idx].points.push_back(cubeCenter);
-		  double minX, minY, minZ, maxX, maxY, maxZ;
-		  octree.getMetricMin(minX, minY, minZ);
-		  octree.getMetricMax(maxX, maxY, maxZ);
-		  double h = (1.0 - fmin(fmax((cubeCenter.z - minZ) / (maxZ - minZ), 0.0), 1.0)) * m_colorFactor;
-		  occupiedNodesVis.markers[idx].colors.push_back(heightMapColor(h));
-	  }
-  } 
-  octomap_msgs::binaryMapToMsg(octree, bmap_msg);
-  
-  fremenCloud.header.frame_id = "/map";
-  fremenCloud.header.stamp = ros::Time::now();
-  
-  octomap_pub_ptr->publish(bmap_msg);
-  estimate_pub_ptr->publish(occupiedNodesVis);
-  
-  ROS_INFO("Octomap published!");
-  
-  res.result = true;
-
-  return true;
-}
-
-
-
 
 int main(int argc,char *argv[])
 {
