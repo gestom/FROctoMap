@@ -13,24 +13,25 @@
 
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
-#include "fremen/GenerateOctomap.h"
+#include "fremen/RetrieveOctomap.h"
+#include "fremen/EstimateOctomap.h"
 
-#define MAX_X 54
-#define MAX_Y 42
-#define MAX_Z 94
+#define MAX_X 201 
+#define MAX_Y 201
+#define MAX_Z 101
 
-#define LIM_MIN_X -2.6
-#define LIM_MIN_Y -2.0
-#define LIM_MIN_Z 0.0
-#define LIM_MAX_X 0.05
-#define LIM_MAX_Y 0.05
-#define LIM_MAX_Z 4.7
+#define LIM_MIN_X -5.0
+#define LIM_MIN_Y -5.0
+#define LIM_MIN_Z -0.1 
+#define LIM_MAX_X 5.0
+#define LIM_MAX_Y 5.0
+#define LIM_MAX_Z 4.9
 
 using namespace std;
 using namespace octomap;
 
 CFremenGrid *grid_ptr;
-ros::Publisher *octomap_pub_ptr, *markers_pub_ptr;
+ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr;
 
 //Parameters
 double resolution, m_colorFactor;
@@ -107,6 +108,12 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 	if(tree){
 		OcTree* octree = dynamic_cast<OcTree*>(tree);
 		int cnt = 0;
+
+		double minX, minY, minZ, maxX, maxY, maxZ;
+		octree->getMetricMin(minX, minY, minZ);
+		octree->getMetricMax(maxX, maxY, maxZ);
+		printf("%f %f %f\n",minX,minY,minZ);
+		printf("%f %f %f\n",maxX,maxY,maxZ);
 		for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 			for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 				for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
@@ -115,7 +122,6 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 						if(octree->isNodeOccupied(n))
 						{
 							grid_ptr->add(cnt,1);
-							//	  printf("UUU: %f %f %f\n",i,j,w);
 						}
 						else
 						{
@@ -153,9 +159,8 @@ bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Respo
   return true;
 }
 
-bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOctomap::Response &res)
+bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOctomap::Response &res)
 {
-  
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -170,6 +175,7 @@ bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOc
 	  for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
 			  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
+			  
 			  if(grid_ptr->retrieve(cnt, req.stamp))
 			  {
 				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
@@ -199,7 +205,7 @@ bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOc
   for (unsigned i = 0; i < occupiedNodesVis.markers.size(); ++i) 
   {
     double size = octree.getNodeSize(i);
-    occupiedNodesVis.markers[i].header.frame_id = "/depth_optical_frame";
+    occupiedNodesVis.markers[i].header.frame_id = "/map";
     occupiedNodesVis.markers[i].header.stamp = ros::Time::now();
     occupiedNodesVis.markers[i].ns = "map";
     occupiedNodesVis.markers[i].id = i;
@@ -228,11 +234,100 @@ bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOc
   } 
   octomap_msgs::binaryMapToMsg(octree, bmap_msg);
   
-  fremenCloud.header.frame_id = "/depth_optical_frame";
+  fremenCloud.header.frame_id = "/map";
   fremenCloud.header.stamp = ros::Time::now();
   
   octomap_pub_ptr->publish(bmap_msg);
-  markers_pub_ptr->publish(occupiedNodesVis);
+  retrieve_pub_ptr->publish(occupiedNodesVis);
+  
+  ROS_INFO("Octomap published!");
+  
+  res.result = true;
+
+  return true;
+}
+
+bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
+{
+  octomap_msgs::Octomap bmap_msg;
+  OcTree octree (resolution);
+  
+
+  //Create pointcloud:
+  octomap::Pointcloud octoCloud;
+  sensor_msgs::PointCloud fremenCloud;
+  
+  geometry_msgs::Point32 test_point;
+  int cnt = 0;
+  float estimate = 0;
+  for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
+	  for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
+		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
+			  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
+			  estimate = grid_ptr->estimate(cnt, req.stamp);
+			  if(estimate >req.minProbability && estimate< req.maxProbability)
+			  {
+				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
+				  octree.updateNode(ptt,true,true);
+			  }
+			  cnt++;
+		  }
+	  }
+  }
+  //Update grid
+  octree.updateInnerOccupancy();
+  
+  //init visualization markers:
+  visualization_msgs::MarkerArray occupiedNodesVis;
+  unsigned int m_treeDepth = octree.getTreeDepth();
+  
+  //each array stores all cubes of a different size, one for each depth level:
+  occupiedNodesVis.markers.resize(m_treeDepth + 1);
+  geometry_msgs::Point cubeCenter;
+  
+  std_msgs::ColorRGBA m_color;
+  m_color.r = 0.0;
+  m_color.g = 0.0;
+  m_color.b = 1.0;
+  m_color.a = 1.0;
+  
+  for (unsigned i = 0; i < occupiedNodesVis.markers.size(); ++i) 
+  {
+    double size = octree.getNodeSize(i);
+    occupiedNodesVis.markers[i].header.frame_id = "/map";
+    occupiedNodesVis.markers[i].header.stamp = ros::Time::now();
+    occupiedNodesVis.markers[i].ns = "map";
+    occupiedNodesVis.markers[i].id = i;
+    occupiedNodesVis.markers[i].type = visualization_msgs::Marker::CUBE_LIST;
+    occupiedNodesVis.markers[i].scale.x = size;
+    occupiedNodesVis.markers[i].scale.y = size;
+    occupiedNodesVis.markers[i].scale.z = size;
+    occupiedNodesVis.markers[i].color = m_color;
+  }
+
+  for(OcTree::leaf_iterator it = octree.begin_leafs(), end = octree.end_leafs(); it != end; ++it)
+  {
+	  if(it != NULL && octree.isNodeOccupied(*it))
+	  {
+		  unsigned idx = it.getDepth();
+		  cubeCenter.x = it.getX();
+		  cubeCenter.y = it.getY();
+		  cubeCenter.z = it.getZ();
+		  occupiedNodesVis.markers[idx].points.push_back(cubeCenter);
+		  double minX, minY, minZ, maxX, maxY, maxZ;
+		  octree.getMetricMin(minX, minY, minZ);
+		  octree.getMetricMax(maxX, maxY, maxZ);
+		  double h = (1.0 - fmin(fmax((cubeCenter.z - minZ) / (maxZ - minZ), 0.0), 1.0)) * m_colorFactor;
+		  occupiedNodesVis.markers[idx].colors.push_back(heightMapColor(h));
+	  }
+  } 
+  octomap_msgs::binaryMapToMsg(octree, bmap_msg);
+  
+  fremenCloud.header.frame_id = "/map";
+  fremenCloud.header.stamp = ros::Time::now();
+  
+  octomap_pub_ptr->publish(bmap_msg);
+  estimate_pub_ptr->publish(occupiedNodesVis);
   
   ROS_INFO("Octomap published!");
   
@@ -242,9 +337,9 @@ bool generate_octomap(fremen::GenerateOctomap::Request  &req, fremen::GenerateOc
 }
 
 
+
 int main(int argc,char *argv[])
 {
-  
   ros::init(argc, argv, "froctomap");
   ros::NodeHandle n;
 
@@ -256,7 +351,6 @@ int main(int argc,char *argv[])
   CFremenGrid grid(MAX_X * MAX_Y * MAX_Z);
   grid_ptr = &grid;
   
-  
   //Subscribers:
   ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
   
@@ -264,19 +358,18 @@ int main(int argc,char *argv[])
   ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
   octomap_pub_ptr = &octomap_pub;
   
-  ros::Publisher markers_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_markers", 100);
-  markers_pub_ptr = &markers_pub;
+  ros::Publisher retrieve_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_retrieved", 100);
+  ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
+  retrieve_pub_ptr = &retrieve_pub;
+  estimate_pub_ptr = &estimate_pub;
   
   //Services:
-  ros::ServiceServer generate_service = n.advertiseService("generate_octomap", generate_octomap);
+  ros::ServiceServer retrieve_service = n.advertiseService("retrieve_octomap", retrieve_octomap);
+  ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
   ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
   ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
 
   ros::spin();
   
   return 0;
-  
 }
-
-
-
