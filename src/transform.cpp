@@ -15,12 +15,11 @@
 #include <pcl_ros/filters/passthrough.h>
 
 
-float x = 0;
-float y = 0;
+float x,y,a;
 float gridResolution = 0.1;
 ros::Publisher pub;
 int pcCounter = 0;
-pcl::PointCloud<pcl::PointXYZ> completeCloud;
+pcl::PointCloud<pcl::PointXYZ>::Ptr completeCloud(new pcl::PointCloud<pcl::PointXYZ>);
 
 void pose_cb (const geometry_msgs::PosePtr& pose)
 {
@@ -33,7 +32,9 @@ void pose_cb (const geometry_msgs::PosePtr& pose)
 
 void name_cb (const std_msgs::StringPtr& input)
 {
-	if (input->data == "Ramp2"){
+	//if (input->data == "Aisle2")
+	if (input->data == "Ramp2")
+	{
 		printf("Starting to listen\n");
 		pcCounter = 0;
 	}
@@ -53,13 +54,24 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 		pcl::PointCloud<pcl::PointXYZ> output1;
 		pcl_conversions::toPCL(*inputCloud, cloud2);
 		pcl::fromPCLPointCloud2(cloud2, cloud1);
-		completeCloud = cloud1;
+		*completeCloud = cloud1;
+		std::cout << completeCloud->size() << std::endl; 
+			
+		pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
+		/*voxel_grid.setInputCloud (completeCloud);
+		voxel_grid.setLeafSize (0.1, 0.1, 0.1);
+		voxel_grid.filter (cloud1);
+		pcl::transformPointCloud (cloud1, output1,scale);*/
+
+/*		pcl::toPCLPointCloud2(*completeCloud, output2);
+		output2.header.frame_id = "/head_xtion_rgb_optical_frame";
+		pub.publish (output2);*/
 		if (pcCounter == 67){
-			/*pcl::PassThrough<pcl::PointXYZ> sor;
-			sor.setInputCloud (completeCloud);
-			sor.setLeafSize (0.02, 0.02, 0.02);
-			sor.filter (completeCloud);*/
-			pcl::transformPointCloud (completeCloud, output1,scale);
+			pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
+			voxel_grid.setInputCloud (completeCloud);
+			voxel_grid.setLeafSize (0.05, 0.05, 0.05);
+			voxel_grid.filter (cloud1);
+			pcl::transformPointCloud (cloud1, output1,scale);
 			pcl::toPCLPointCloud2(output1, output2);
 			output2.header.frame_id = "/map";
 			pub.publish (output2);
@@ -70,6 +82,7 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 
 int main (int argc, char** argv)
 {
+	x=y=a=0;
 	// Initialize ROS
 	ros::init (argc, argv, "my_pcl_tutorial");
 	ros::NodeHandle nh;
