@@ -15,6 +15,7 @@
 #include "fremen/SaveGrid.h"
 #include "fremen/RetrieveOctomap.h"
 #include "fremen/EstimateOctomap.h"
+#include <std_msgs/String.h>
 
 #define DIM_X 201 
 #define DIM_Y 201
@@ -22,21 +23,25 @@
 
 #define LIM_MIN_X -5.0
 #define LIM_MIN_Y -5.0
-#define LIM_MIN_Z -0.1 
+#define LIM_MIN_Z -1.0 
 #define LIM_MAX_X 5.0
 #define LIM_MAX_Y 5.0
-#define LIM_MAX_Z 4.9
+#define LIM_MAX_Z 4.0
 
 using namespace std;
 using namespace octomap;
 
-CFremenGrid *grid_ptr;
+bool waitForPose = false;
+bool waitForMap = false;
+int currentMap = -1;
+int numMaps = 0;
+CFremenGrid *gridArray[10];
+CFremenGrid *gridPtr;
 ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr;
 
 //Parameters
 double resolution, m_colorFactor;
 string filename;
-long signalLength = 0;
 
 std_msgs::ColorRGBA heightMapColor(double h){
 
@@ -104,57 +109,59 @@ std_msgs::ColorRGBA heightMapColor(double h){
 
 void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 {
-	AbstractOcTree* tree = msgToMap(*msg);
-	if(tree){
-		OcTree* octree = dynamic_cast<OcTree*>(tree);
-		int cnt = 0;
+	if (waitForMap){
+		AbstractOcTree* tree = msgToMap(*msg);
+		if(tree){
+			OcTree* octree = dynamic_cast<OcTree*>(tree);
+			int cnt = 0;
 
-		double minX, minY, minZ, maxX, maxY, maxZ;
-		octree->getMetricMin(minX, minY, minZ);
-		octree->getMetricMax(maxX, maxY, maxZ);
-		printf("%f %f %f\n",minX,minY,minZ);
-		printf("%f %f %f\n",maxX,maxY,maxZ);
-		for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
-			for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
-				for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-					OcTreeNode* n = octree->search(i,j,w);
-					if(n){
-						if(octree->isNodeOccupied(n))
-						{
-							grid_ptr->add(cnt,1);
+			double minX, minY, minZ, maxX, maxY, maxZ;
+			octree->getMetricMin(minX, minY, minZ);
+			octree->getMetricMax(maxX, maxY, maxZ);
+			printf("%f %f %f\n",minX,minY,minZ);
+			printf("%f %f %f\n",maxX,maxY,maxZ);
+			for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
+				for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
+					for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
+						OcTreeNode* n = octree->search(i,j,w);
+						if(n){
+							if(octree->isNodeOccupied(n))
+							{
+								gridPtr->add(cnt,1);
+							}
+							else
+							{
+								gridPtr->add(cnt,0);
+							}
+						}else{
+							gridPtr->add(cnt,0);
 						}
-						else
-						{
-							grid_ptr->add(cnt,0);
-						}
-					}else{
-						grid_ptr->add(cnt,0);
+						cnt++;
 					}
-					cnt++;
 				}
 			}
+			ROS_INFO("3D Grid Updated! -> Iteration: %i over %i elements in %i element grid", gridPtr->signalLength,cnt,gridPtr->numCells);
+		}else{
+			ROS_ERROR("Octomap conversion error!");
+			exit(1);
 		}
-		ROS_INFO("3D Grid Updated! -> Iteration: %lu over %i elements in %i element grid", signalLength,cnt,grid_ptr->numCells);
-	}else{
-		ROS_ERROR("Octomap conversion error!");
-		exit(1);
+		gridPtr->signalLength++;
+		delete tree;
 	}
-	signalLength++;
-	delete tree;
 }
 
 bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
 {
-	grid_ptr->save(req.filename.c_str(), (bool) req.lossy);
-	res.size = signalLength;
+	gridPtr->save(req.filename.c_str(), (bool) req.lossy);
+	res.size = gridPtr->signalLength;
 	ROS_INFO("3D Grid saved!");
 	return true;
 }
 
 bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Response &res)
 {
-  grid_ptr->update((int) req.order, signalLength);
-  res.size = signalLength;
+  gridPtr->update((int) req.order, gridPtr->signalLength);
+  res.size = gridPtr->signalLength;
   ROS_INFO("3D Grid updated and saved!");
   return true;
 }
@@ -176,7 +183,7 @@ bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOc
 		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
 			  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
 			  
-			  if(grid_ptr->retrieve(cnt, req.stamp))
+			  if(gridPtr->retrieve(cnt, req.stamp))
 			  {
 				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
 				  octree.updateNode(ptt,true,true);
@@ -262,7 +269,7 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   char gridka[DIM_X*DIM_Y*DIM_Z];
   float estimate;
   for (int i = 0;i<DIM_X*DIM_Y*DIM_Z;i++){
-	  estimate = grid_ptr->estimate(i, req.stamp);
+	  estimate = gridPtr->estimate(i, req.stamp);
 	  if(estimate >req.minProbability && estimate< req.maxProbability) gridka[i] = 1; else gridka[i] = 0;
   }
   int nn[] = {1,-1,DIM_Z,-DIM_Z,DIM_Y*DIM_Z,-DIM_Y*DIM_Z};
@@ -348,6 +355,32 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   return true;
 }
 
+void pose_cb (const geometry_msgs::PosePtr& pose)
+{
+	if (waitForPose){
+		gridPtr->setPose(pose->position.x,pose->position.y);
+		ROS_INFO("Position updated %f %f\n",pose->position.x,pose->position.y);
+		waitForPose = false;
+		waitForMap = true;
+	}
+}
+
+void name_cb (const std_msgs::StringPtr& input)
+{
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(input->data.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		currentMap = numMaps; 
+		gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
+		gridArray[currentMap]->setName(input->data.c_str());
+		gridPtr = gridArray[currentMap];
+	}
+	ROS_INFO("Receiving data about map %s, which is map %i of %i total maps. It already has %i observations.\n",gridPtr->name,currentMap,numMaps,gridPtr->signalLength);
+	waitForPose = true;
+}
+
 int main(int argc,char *argv[])
 {
   ros::init(argc, argv, "froctomap");
@@ -358,11 +391,12 @@ int main(int argc,char *argv[])
   n.param<std::string>("filename", filename, "week.bin");
 
   //Fremen Grid:
-  CFremenGrid grid(DIM_X * DIM_Y * DIM_Z);
-  grid_ptr = &grid;
+  gridPtr = NULL;
   
   //Subscribers:
   ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
+  ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);
+  ros::Subscriber sub_name = n.subscribe ("/ptu_sweep/current_node", 1, name_cb);
   
   //Publishers:
   ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
