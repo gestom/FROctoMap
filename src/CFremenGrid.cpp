@@ -4,6 +4,7 @@ using namespace std;
 
 CFremenGrid::CFremenGrid(int size)
 {
+	signalLength = 0;
 	numCells = size;
 	order = 0;
 	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement*));
@@ -18,6 +19,16 @@ CFremenGrid::~CFremenGrid()
 	free(cellArray);
 }
 
+void CFremenGrid::setName(const char* n)
+{
+	strcpy(name,n);
+}
+
+void CFremenGrid::setPose(float x, float y)
+{
+	positionX = x;
+	positionY = y;
+}
 
 void CFremenGrid::update(int order,int signalLengthi)
 {
@@ -25,7 +36,7 @@ void CFremenGrid::update(int order,int signalLengthi)
 	plan->prepare(signalLength);
 	cout << "Signal length " << signalLength << " of " << cellArray[0]->getLength() << endl;
 	for (int i=0;i<numCells;i++){
-		if (i%100==0)cout << "Updating cell " << i << " of " << numCells << endl;
+//		if (i%100==0)cout << "Updating cell " << i << " of " << numCells << endl;
 		cellArray[i]->update(order,plan);
 	}
 }

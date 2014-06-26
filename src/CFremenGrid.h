@@ -30,6 +30,10 @@ public:
   void clear();
   void print();
 
+  /*sets the octomap's origin*/
+  void setPose(float x, float y);
+  void setName(const char* n);
+
   /*changes the model order*/
   void update(int number,int signalLength);
   void reconstruct(int number,unsigned char *reconstructed);
@@ -39,12 +43,14 @@ public:
   double *signal;
 
 //private:
+	char name[100];
 	CFrelement **cellArray;
 	int numCells;
 	int xDim,yDim,zDim;
 	int order;
 	unsigned int signalLength;
 	CFFTPlan *plan;
+	float positionX,positionY;
 };
 
 #endif
