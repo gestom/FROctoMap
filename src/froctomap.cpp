@@ -156,6 +156,19 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 
 bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
 {
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		res.result = false;
+		gridPtr = NULL;
+		return false;
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	
 	gridPtr->save(req.filename.c_str(), (bool) req.lossy);
 	res.size = gridPtr->signalLength;
 	ROS_INFO("3D Grid saved!");
@@ -165,16 +178,40 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 
 bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Response &res)
 {
-  gridPtr->update((int) req.order, gridPtr->signalLength);
-  res.size = gridPtr->signalLength;
-  ROS_INFO("3D Grid updated and saved!");
-  res.result = true;
-  return true;
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		res.result = false;
+		gridPtr = NULL;
+		return false;
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	gridPtr->update((int) req.order, gridPtr->signalLength);
+	res.size = gridPtr->signalLength;
+	ROS_INFO("3D Grid updated and saved!");
+	res.result = true;
+	return true;
 }
 
 bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctomap::Response &res)
 {
-
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		res.result = false;
+		gridPtr = NULL;
+		return false;
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -264,6 +301,20 @@ bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctom
 
 bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
 {
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		res.result = false;
+		gridPtr = NULL;
+		return false;
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	
+
     ROS_INFO("Service: estimate");
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);

@@ -1,3 +1,4 @@
+string mapname 
 int64 stamp
 float64 minProbability 
 float64 maxProbability 

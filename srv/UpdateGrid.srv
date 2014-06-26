@@ -1,3 +1,4 @@
+string mapname
 int64 order
 float64 precision
 bool lossy

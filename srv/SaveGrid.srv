@@ -1,3 +1,4 @@
+string mapname 
 string filename
 bool lossy
 ---

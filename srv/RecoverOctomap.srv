@@ -1,3 +1,4 @@
+string mapname 
 int64 stamp
 ---
 bool result
