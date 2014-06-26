@@ -13,7 +13,7 @@
 
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
-#include "fremen/RetrieveOctomap.h"
+#include "fremen/RecoverOctomap.h"
 #include "fremen/EstimateOctomap.h"
 
 #define DIM_X 201 
@@ -112,8 +112,8 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 		double minX, minY, minZ, maxX, maxY, maxZ;
 		octree->getMetricMin(minX, minY, minZ);
 		octree->getMetricMax(maxX, maxY, maxZ);
-		printf("%f %f %f\n",minX,minY,minZ);
-		printf("%f %f %f\n",maxX,maxY,maxZ);
+        //printf("%f %f %f\n",minX,minY,minZ);
+        //printf("%f %f %f\n",maxX,maxY,maxZ);
 		for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 			for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 				for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
@@ -134,7 +134,7 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 				}
 			}
 		}
-		ROS_INFO("3D Grid Updated! -> Iteration: %lu over %i elements in %i element grid", signalLength,cnt,grid_ptr->numCells);
+        //ROS_INFO("3D Grid Updated! -> Iteration: %lu over %i elements in %i element grid", signalLength,cnt,grid_ptr->numCells);
 	}else{
 		ROS_ERROR("Octomap conversion error!");
 		exit(1);
@@ -148,19 +148,22 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 	grid_ptr->save(req.filename.c_str(), (bool) req.lossy);
 	res.size = signalLength;
 	ROS_INFO("3D Grid saved!");
+    res.result = true;
 	return true;
 }
 
 bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Response &res)
-{
+{;
   grid_ptr->update((int) req.order, signalLength);
   res.size = signalLength;
-  ROS_INFO("3D Grid updated and saved!");
+  ROS_INFO("3D Grid updated!");
+  res.result = true;
   return true;
 }
 
-bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOctomap::Response &res)
+bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctomap::Response &res)
 {
+
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -249,6 +252,7 @@ bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOc
 
 bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
 {
+    ROS_INFO("Service: estimate");
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -368,13 +372,14 @@ int main(int argc,char *argv[])
   ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
   octomap_pub_ptr = &octomap_pub;
   
-  ros::Publisher retrieve_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_retrieved", 100);
-  ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
+  ros::Publisher retrieve_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_recovered", 100);
   retrieve_pub_ptr = &retrieve_pub;
+
+  ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
   estimate_pub_ptr = &estimate_pub;
   
   //Services:
-  ros::ServiceServer retrieve_service = n.advertiseService("retrieve_octomap", retrieve_octomap);
+  ros::ServiceServer retrieve_service = n.advertiseService("recover_octomap", recover_octomap);
   ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
   ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
   ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);

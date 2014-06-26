@@ -18,5 +18,7 @@
   </node>
  
   <node pkg="fremen" type="transform" name="transform" output="screen"></node>
+
+  <node pkg="fremen" type="froctomap_ActionServer" name="Froctomap_ActionServer" output="screen"></node>
   
 </launch>
