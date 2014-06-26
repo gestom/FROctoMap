@@ -13,7 +13,7 @@
 
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
-#include "fremen/RetrieveOctomap.h"
+#include "fremen/RecoverOctomap.h"
 #include "fremen/EstimateOctomap.h"
 #include <std_msgs/String.h>
 
@@ -23,7 +23,7 @@
 
 #define LIM_MIN_X -5.0
 #define LIM_MIN_Y -5.0
-#define LIM_MIN_Z -1.0 
+#define LIM_MIN_Z -1.0
 #define LIM_MAX_X 5.0
 #define LIM_MAX_Y 5.0
 #define LIM_MAX_Z 4.0
@@ -120,10 +120,14 @@ void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg)
 			octree->getMetricMax(maxX, maxY, maxZ);
 			printf("%f %f %f\n",minX,minY,minZ);
 			printf("%f %f %f\n",maxX,maxY,maxZ);
+			float x = gridPtr->positionX; 
+			float y = gridPtr->positionY;
+			printf("%f %f %f\n",LIM_MIN_X,LIM_MIN_Y,LIM_MIN_Z);
+			printf("%f %f %f\n",LIM_MAX_X,LIM_MAX_Y,LIM_MAX_Z);
 			for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 				for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 					for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-						OcTreeNode* n = octree->search(i,j,w);
+						OcTreeNode* n = octree->search(i+x,j+y,w);
 						if(n){
 							if(octree->isNodeOccupied(n))
 							{
@@ -155,6 +159,7 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 	gridPtr->save(req.filename.c_str(), (bool) req.lossy);
 	res.size = gridPtr->signalLength;
 	ROS_INFO("3D Grid saved!");
+    res.result = true;
 	return true;
 }
 
@@ -163,11 +168,13 @@ bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Respo
   gridPtr->update((int) req.order, gridPtr->signalLength);
   res.size = gridPtr->signalLength;
   ROS_INFO("3D Grid updated and saved!");
+  res.result = true;
   return true;
 }
 
-bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOctomap::Response &res)
+bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctomap::Response &res)
 {
+
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -175,17 +182,18 @@ bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOc
   //Create pointcloud:
   octomap::Pointcloud octoCloud;
   sensor_msgs::PointCloud fremenCloud;
-  
+  float x = gridPtr->positionX; 
+  float y = gridPtr->positionY; 
   geometry_msgs::Point32 test_point;
   int cnt = 0;
   for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 	  for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
-			  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
+			  point3d ptt(x+i+resolution/2,y+j+resolution/2,w+resolution/2);
 			  
 			  if(gridPtr->retrieve(cnt, req.stamp))
 			  {
-				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
+				  octoCloud.push_back(x+i+resolution/2,y+j+resolution/2,w+resolution/2);
 				  octree.updateNode(ptt,true,true);
 			  }
 			  cnt++;
@@ -256,6 +264,7 @@ bool retrieve_octomap(fremen::RetrieveOctomap::Request  &req, fremen::RetrieveOc
 
 bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
 {
+    ROS_INFO("Service: estimate");
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -268,6 +277,8 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   int cnt = 0;
   char gridka[DIM_X*DIM_Y*DIM_Z];
   float estimate;
+  float x = gridPtr->positionX; 
+  float y = gridPtr->positionY; 
   for (int i = 0;i<DIM_X*DIM_Y*DIM_Z;i++){
 	  estimate = gridPtr->estimate(i, req.stamp);
 	  if(estimate >req.minProbability && estimate< req.maxProbability) gridka[i] = 1; else gridka[i] = 0;
@@ -285,8 +296,8 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
 			  if(gridka[cnt] > req.morphology)
 			  {
-				  point3d ptt(i+resolution/2,j+resolution/2,w+resolution/2);
-				  octoCloud.push_back(i+resolution/2,j+resolution/2,w+resolution/2);
+				  point3d ptt(x+i+resolution/2,y+j+resolution/2,w+resolution/2);
+				  octoCloud.push_back(x+i+resolution/2,y+j+resolution/2,w+resolution/2);
 				  octree.updateNode(ptt,true,true);
 			  }
 			  cnt++;
@@ -377,43 +388,44 @@ void name_cb (const std_msgs::StringPtr& input)
 		gridArray[currentMap]->setName(input->data.c_str());
 		gridPtr = gridArray[currentMap];
 	}
-	ROS_INFO("Receiving data about map %s, which is map %i of %i total maps. It already has %i observations.\n",gridPtr->name,currentMap,numMaps,gridPtr->signalLength);
+	ROS_INFO("Receiving data about map %s, which is map %i of %i total maps. It already has %i observations. It's position is %.3f %.3f\n",gridPtr->name,currentMap,numMaps,gridPtr->signalLength,gridPtr->positionX,gridPtr->positionY);
 	waitForPose = true;
 }
 
 int main(int argc,char *argv[])
 {
-  ros::init(argc, argv, "froctomap");
-  ros::NodeHandle n;
+	ros::init(argc, argv, "froctomap");
+	ros::NodeHandle n;
 
-  n.param("resolution", resolution, 0.05);
-  n.param("colorFactor", m_colorFactor, 0.8);
-  n.param<std::string>("filename", filename, "week.bin");
+	n.param("resolution", resolution, 0.05);
+	n.param("colorFactor", m_colorFactor, 0.8);
+	n.param<std::string>("filename", filename, "week.bin");
 
-  //Fremen Grid:
-  gridPtr = NULL;
-  
-  //Subscribers:
-  ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
-  ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);
-  ros::Subscriber sub_name = n.subscribe ("/ptu_sweep/current_node", 1, name_cb);
-  
-  //Publishers:
-  ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
-  octomap_pub_ptr = &octomap_pub;
-  
-  ros::Publisher retrieve_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_retrieved", 100);
-  ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
-  retrieve_pub_ptr = &retrieve_pub;
-  estimate_pub_ptr = &estimate_pub;
-  
-  //Services:
-  ros::ServiceServer retrieve_service = n.advertiseService("retrieve_octomap", retrieve_octomap);
-  ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
-  ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
-  ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
+	//Fremen Grid:
+	gridPtr = NULL;
 
-  ros::spin();
-  
-  return 0;
+	//Subscribers:
+	ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomapCallback);
+	ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);
+	ros::Subscriber sub_name = n.subscribe ("/ptu_sweep/current_node", 1, name_cb);
+
+	//Publishers:
+	ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
+	octomap_pub_ptr = &octomap_pub;
+
+	ros::Publisher retrieve_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_recovered", 100);
+	retrieve_pub_ptr = &retrieve_pub;
+
+	ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
+	estimate_pub_ptr = &estimate_pub;
+
+	//Services:
+	ros::ServiceServer retrieve_service = n.advertiseService("recover_octomap", recover_octomap);
+	ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
+	ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
+	ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
+
+	ros::spin();
+
+	return 0;
 }

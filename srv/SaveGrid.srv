@@ -2,3 +2,4 @@ string filename
 bool lossy
 ---
 int64 size
+bool result

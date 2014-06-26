@@ -9,7 +9,8 @@
     <!-- maximum range to integrate (speedup!) -->
     <param name="sensor_model/max_range" value="5.0" />
     <!-- data source to integrate (PointCloud2) -->
-    <remap from="cloud_in" to="/froctomap/localpoints" />
+    <!--remap from="cloud_in" to="/local_metric_map/intermediate_point_cloud" /-->
+    <remap from="cloud_in" to="/local_metric_map/merged_point_cloud" />
   </node>
   
   <node pkg="fremen" type="froctomap" name="froctomap"  output="screen">
@@ -18,5 +19,7 @@
   </node>
  
   <node pkg="fremen" type="transform" name="transform" output="screen"></node>
+
+  <node pkg="fremen" type="froctomap_ActionServer" name="Froctomap_ActionServer" output="screen"></node>
   
 </launch>
