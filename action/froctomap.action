@@ -6,6 +6,7 @@ float64 precision	# 0.0 - 1.0
 bool lossy
 float64 minprobability  # 0.0 - 1.0
 float64 maxprobability	# 0.0 - 1.0
+int8 morphology 
 string filename	
 ---
 # Define the result
