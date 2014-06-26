@@ -37,7 +37,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
     fremen::SaveGrid srv;
     srv.request.filename = goal->filename;
     srv.request.lossy = goal->lossy;
-  
+
     if (save_client_ptr->call(srv)){
       ROS_INFO("3D Grid Saved (Size: %d)", srv.response.size);
       as->setSucceeded();
@@ -63,6 +63,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
     srv.request.stamp = goal->stamp;
     srv.request.minProbability = goal->minprobability;
     srv.request.maxProbability = goal->maxprobability;
+    srv.request.morphology = goal->morphology;
   
     if (estimate_client_ptr->call(srv)){
       ROS_INFO("Octomap Estimated");
