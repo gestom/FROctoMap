@@ -4,3 +4,4 @@ bool lossy
 ---
 float64 precision
 int64 size
+bool result
