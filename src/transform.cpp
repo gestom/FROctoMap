@@ -40,7 +40,30 @@ void name_cb (const std_msgs::StringPtr& input)
 	}
 }
 
+
 void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+{
+	tf::TransformListener tl;
+	sensor_msgs::PointCloud2 cloud2;
+	tf::Transform tf;
+	tl.waitForTransform("/map", "/head_xtion_depth_optical_frame",inputCloud->header.stamp, ros::Duration(20.0));
+	tl.lookupTransform("/map","/head_xtion_depth_optical_frame", inputCloud->header.stamp, tf);
+	pcl_ros::transformPointCloud("/head_xtion_depth_optical_frame",tf,inputCloud,cloud2);
+/*	pcl::PCLPointCloud cloud;
+	sensor_msgs::convertPointCloud2ToPointCloud(inputCloud,cloud);
+	TfListener.transformPointCloud("/head_xtion_depth_optical_frame", ,);
+	sensor_msgs::convertPointCloudToPointCloud2(pcWorldFrame,pc2WorldFrame) 
+
+
+	pcl::PCLPointCloud2 cloud2;
+	tf::TransformListener listener;
+	listener.lookupTransform("/head_xtion_depth_optical_frame", "/map",  ros::Time(0), transform);
+	transformPointCloud("/head_xtion_depth_optical_frame","/map",inputCloud,cloud2);*/
+}
+
+
+
+void cloud_cb_fuck (const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
 	if (pcCounter++ < 67){
 		pcl::PCLPointCloud2 cloud2;
@@ -88,7 +111,7 @@ int main (int argc, char** argv)
 	ros::NodeHandle nh;
 
 	// Create a ROS subscriber for the input point cloud
-	ros::Subscriber subcloud = nh.subscribe ("/transform_pc2/depth_registered/points", 1, cloud_cb);
+	ros::Subscriber subcloud = nh.subscribe ("/local_metric_map/merged_point_cloud", 1, cloud_cb);
 	ros::Subscriber subname = nh.subscribe ("/ptu_sweep/current_node", 1, name_cb);
 	ros::Subscriber subpose = nh.subscribe ("/robot_pose", 1, pose_cb);
 
