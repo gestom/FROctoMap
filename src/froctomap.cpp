@@ -52,6 +52,7 @@ ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr;
 //Parameters
 double resolution, m_colorFactor;
 string filename;
+string loadfilename;
 
 std_msgs::ColorRGBA heightMapColor(double h)
 {
@@ -552,18 +553,23 @@ int main(int argc,char *argv[])
 
 	n.param("resolution", resolution, 0.2);
 	n.param("colorFactor", m_colorFactor, 0.8);
-	n.param<std::string>("filename", filename, "/home/hydro-default/WayPoint8.grd");
+	ros::NodeHandle nh("~");
+	nh.param<std::string>("filename", loadfilename, "");
 
 	//Fremen Grid:
 	gridPtr = NULL;
-
-	numMaps = 0;
-	gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
-	currentMap = 0;
-	gridArray[0]->load(filename.c_str());
-	gridPtr = gridArray[currentMap];
-	printf("Loaded %i cells of %s\n",gridPtr->numCells,gridPtr->name);
-
+	if (strlen(loadfilename.c_str()) > 0){
+		numMaps = 0;
+		printf("attempt to load\n");
+		gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
+		currentMap = 0;
+		if (gridArray[0]->load(loadfilename.c_str())){
+			gridPtr = gridArray[currentMap];
+		}else{
+			numMaps = 0;
+			gridPtr = NULL;
+		}
+	}
 	//Subscribers:
 	ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomap_cb);
 	ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);

@@ -40,7 +40,7 @@ public:
   void reconstruct(int number,unsigned char *reconstructed);
   void print(int number);
   void save(const char*name,bool lossy = false);
-  void load(const char*name);
+  bool load(const char*name);
   double *signal;
 
 //private:

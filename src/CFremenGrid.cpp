@@ -59,11 +59,16 @@ void CFremenGrid::save(const char* filename,bool lossy)
 	fclose(f);
 }
 
-void CFremenGrid::load(const char* filename)
+bool CFremenGrid::load(const char* filename)
 {
 	int ret = 0;
 	signalLength = 0;
 	FILE* f=fopen(filename,"r");
+	if (f == NULL){
+		printf("FrOctomap %s not found, aborting load.\n",filename);
+		return false;
+	}
+	printf("Loading FrOctomap %s.\n",filename);
 	for (int i=0;i<numCells;i++){
 		 free(cellArray[i]);
 		 //fprintf(stdout,"Cells %i %ld %d\n",i,sizeof(CFrelement*),signalLength);
@@ -83,13 +88,13 @@ void CFremenGrid::load(const char* filename)
 //	fprintf(stdout,"Cells %i, signal length %i\n",numCells,signalLength);
 	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement*));
 	for (int i=0;i<numCells;i++) cellArray[i] = new CFrelement();
-	printf("LOADING \n");
 	for (int i=0;i<numCells;i++){
 		cellArray[i]->load(f);
 		cellArray[i]->signalLength = signalLength;
 	}
-	printf("LOADED\n");
+	printf("FrOctomap %s loaded: name %s with %i cells and %i observations.\n",filename,name,numCells,signalLength);
 	fclose(f);
+	return true;
 }
 
 void CFremenGrid::print(int number)
