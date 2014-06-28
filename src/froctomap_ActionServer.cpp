@@ -73,6 +73,58 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
       ROS_ERROR("Failed to estimate octomap");
       as->setAborted();
     }
+  }else if(goal->name_action == "demo"){
+      ROS_INFO("Initializing demo sequence...");
+
+      //Update service:
+      ROS_INFO("1 -> Update");
+      fremen::UpdateGrid srv1;
+      srv1.request.mapname = "WayPoint8";
+      srv1.request.order = 2;
+      srv1.request.precision = 0.0;
+      srv1.request.lossy = 0;
+
+      if(update_client_ptr->call(srv1)){
+        ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv1.response.precision, srv1.response.size);
+
+        //Estimate service:
+        ROS_INFO("2 -> Estimate");
+        fremen::EstimateOctomap srv2;
+        srv2.request.mapname = "WayPoint8";
+        srv2.request.stamp = 0;
+        srv2.request.minProbability = 0;
+        srv2.request.maxProbability = 1.1;
+        srv2.request.morphology = 0;
+
+        if (estimate_client_ptr->call(srv2)){
+          ROS_INFO("Octomap Estimated");
+          sleep(5);
+          //Estimate service:
+          ROS_INFO("3 -> Estimate");
+          fremen::EstimateOctomap srv3;
+          srv3.request.mapname = "WayPoint8";
+          srv3.request.stamp = 0.5;
+          srv3.request.minProbability = 0;
+          srv3.request.maxProbability = 1.0;
+          srv3.request.morphology = 5;
+
+          if (estimate_client_ptr->call(srv3)){
+            ROS_INFO("Octomap Estimated");
+            as->setSucceeded();
+          }else{
+            ROS_ERROR("Failed to estimate octomap");
+            as->setAborted();
+          }
+
+        }else{
+          ROS_ERROR("Failed to estimate octomap");
+          as->setAborted();
+        }
+      }else{
+        ROS_ERROR("Failed to call service update_grid");
+        as->setAborted();
+      }
+
   }else{
     as->setAborted();
   }
