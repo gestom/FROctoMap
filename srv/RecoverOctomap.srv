@@ -1,4 +1,4 @@
 string mapname 
-int64 stamp
+float64 stamp
 ---
 bool result
