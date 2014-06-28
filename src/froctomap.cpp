@@ -35,6 +35,8 @@
 using namespace std;
 using namespace octomap;
 
+char gridka[DIM_X*DIM_Y*DIM_Z];
+char gridkc[DIM_X*DIM_Y*DIM_Z];
 float gridkp[DIM_X*DIM_Y*DIM_Z];
 float lastPoseX,lastPoseY;
 float mapPoseX,mapPoseY;
@@ -51,7 +53,17 @@ ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr;
 double resolution, m_colorFactor;
 string filename;
 
-std_msgs::ColorRGBA heightMapColor(double h){
+std_msgs::ColorRGBA heightMapColor(double h)
+{
+	std_msgs::ColorRGBA color;
+	color.a = 1.0;
+	color.g = h;	
+	color.r = 1-h;	
+	color.b = 0;	
+	return color;
+}
+
+std_msgs::ColorRGBA heightMapColorA(double h){
 
   std_msgs::ColorRGBA color;
   color.a = 1.0;
@@ -321,6 +333,48 @@ bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctom
   return true;
 }
 
+bool expandNode()
+{
+
+}
+
+
+bool calculateClusters(int seed,int threshold)
+{
+	int indices[10000];
+	int endIndices,startIndices;
+	int dimX = (int)((LIM_MAX_X-LIM_MIN_X)/resolution);
+	int dimY = (int)((LIM_MAX_Y-LIM_MIN_Y)/resolution);
+	int dimZ = (int)((LIM_MAX_Z-LIM_MIN_Z)/resolution);
+	int nn[] = {1,-1,dimZ,-dimZ,dimY*dimZ,-dimY*dimZ};
+	int siz = dimX*dimY*dimZ;
+	int cur,exp;
+	memset(gridkc,0,sizeof(char)*siz);
+	for (int i = 0;i<siz;i++)
+	{
+		endIndices=startIndices=0;
+		if (gridka[i] > seed && gridkc[i] == 0){
+			 printf("GRIDINDEX: %i\n",i);
+			 indices[endIndices++] = i;
+			 while (endIndices-startIndices > 0){
+				 cur=indices[startIndices++];
+				 for (int j=0;j<6;j++)
+				 {
+					exp = cur+nn[j];
+					if (gridkc[exp]==0 && gridka[exp]>threshold){
+						 indices[endIndices++]=exp;
+						 gridkc[exp]=1;
+					}
+				 }
+			 }
+			 printf("GRIDSIZE: %i %i\n",i,endIndices);
+		}
+		if (endIndices > 20){
+			for (int j=0;j<endIndices;j++)	gridka[indices[j]] = seed+1;
+		}
+	}
+}
+
 bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOctomap::Response &res)
 {
 	currentMap = -1;
@@ -340,14 +394,12 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
-
   //Create pointcloud:
   octomap::Pointcloud octoCloud;
   sensor_msgs::PointCloud fremenCloud;
   
   geometry_msgs::Point32 test_point;
   int cnt = 0;
-  char gridka[DIM_X*DIM_Y*DIM_Z];
   float estimate;
   float x = 0*gridPtr->positionX; 
   float y = 0*gridPtr->positionY; 
@@ -367,6 +419,7 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 		  }
 	  }
   }
+  calculateClusters(req.morphology,3);
   for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 	  for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 		  for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
@@ -444,14 +497,13 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 		  cubeCenter.y = y+it.getY();
 		  cubeCenter.z = 1.45+it.getZ();
 		  occupiedNodesVis.markers[idx].points.push_back(cubeCenter);
-		  cnt = (int)((it.getX()-LIM_MIN_X)/resolution)*DIM_Y*DIM_Z+(int)((it.getY()-LIM_MIN_Y)/resolution)*DIM_Z+(int)((it.getZ()-LIM_MIN_Z)/resolution);
+		  cnt = (int)((it.getX()-LIM_MIN_X)/resolution)*dimY*dimZ+(int)((it.getY()-LIM_MIN_Y)/resolution)*dimZ+(int)((it.getZ()-LIM_MIN_Z)/resolution);
 		  /*double minX, minY, minZ, maxX, maxY, maxZ;
 		  octree.getMetricMin(minX, minY, minZ);
 		  octree.getMetricMax(maxX, maxY, maxZ);
 		  double h = (1.0 - fmin(fmax((cubeCenter.z - minZ) / (maxZ - minZ), 0.0), 1.0)) * m_colorFactor;*/
 		  if (gridkp[cnt]<1.0)  printf("CNT:%f %i\n",gridkp[cnt],cnt);
-		  double h = gridkp[cnt]*m_colorFactor;
-		  occupiedNodesVis.markers[idx].colors.push_back(heightMapColor(h));
+		  occupiedNodesVis.markers[idx].colors.push_back(heightMapColor(gridkp[cnt]));
 	  }
   }
   octomap_msgs::binaryMapToMsg(octree, bmap_msg);
@@ -465,7 +517,6 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   ROS_INFO("Octomap published!");
   
   res.result = true;
-
   return true;
 }
 
