@@ -502,7 +502,7 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 		  octree.getMetricMin(minX, minY, minZ);
 		  octree.getMetricMax(maxX, maxY, maxZ);
 		  double h = (1.0 - fmin(fmax((cubeCenter.z - minZ) / (maxZ - minZ), 0.0), 1.0)) * m_colorFactor;*/
-		  if (gridkp[cnt]<1.0)  printf("CNT:%f %i\n",gridkp[cnt],cnt);
+		 // if (gridkp[cnt]<1.0)  printf("CNT:%f %i\n",gridkp[cnt],cnt);
 		  occupiedNodesVis.markers[idx].colors.push_back(heightMapColor(gridkp[cnt]));
 	  }
   }
@@ -552,10 +552,17 @@ int main(int argc,char *argv[])
 
 	n.param("resolution", resolution, 0.2);
 	n.param("colorFactor", m_colorFactor, 0.8);
-	n.param<std::string>("filename", filename, "week.bin");
+	n.param<std::string>("filename", filename, "/home/gestom/WayPoint8.grd");
 
 	//Fremen Grid:
 	gridPtr = NULL;
+
+	numMaps = 0;
+	gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
+	currentMap = 0;
+	gridArray[0]->load(filename.c_str());
+	gridPtr = gridArray[currentMap];
+	printf("Loaded %i cells of %s\n",gridPtr->numCells,gridPtr->name);
 
 	//Subscribers:
 	ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomap_cb);

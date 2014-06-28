@@ -12,7 +12,7 @@ add_action_files(DIRECTORY action FILES froctomap.action)
 
 add_service_files(
 		FILES
-		RecoverOctomap.srv
+		RetrieveOctomap.srv
 		EstimateOctomap.srv
 		SaveGrid.srv
 		UpdateGrid.srv

@@ -41,34 +41,54 @@ void CFremenGrid::update(int order,int signalLengthi)
 	}
 }
 
-void CFremenGrid::save(const char* name,bool lossy)
+void CFremenGrid::save(const char* filename,bool lossy)
 {
-	FILE* f=fopen(name,"w");
+	FILE* f=fopen(filename,"w");
+	unsigned char nameLen = strlen(name);
+	fwrite(&nameLen,sizeof(unsigned char),1,f);
+	fwrite(name,nameLen,1,f);
+	fwrite(&xDim,sizeof(int),1,f);
+	fwrite(&yDim,sizeof(int),1,f);
+	fwrite(&zDim,sizeof(int),1,f);
+	fwrite(&positionX,sizeof(float),1,f);
+	fwrite(&positionY,sizeof(float),1,f);
+
 	fwrite(&numCells,sizeof(int),1,f);
 	fwrite(&signalLength,sizeof(int),1,f);
 	for (int i=0;i<numCells;i++) cellArray[i]->save(f,lossy);
 	fclose(f);
 }
 
-void CFremenGrid::load(const char* name)
+void CFremenGrid::load(const char* filename)
 {
 	int ret = 0;
 	signalLength = 0;
-	FILE* f=fopen(name,"r");
+	FILE* f=fopen(filename,"r");
 	for (int i=0;i<numCells;i++){
 		 free(cellArray[i]);
-		 fprintf(stdout,"Cells %i %i\n",i,sizeof(CFrelement*),signalLength);
+		 //fprintf(stdout,"Cells %i %ld %d\n",i,sizeof(CFrelement*),signalLength);
 	}
 	free(cellArray);
+	unsigned char nameLen = 0;
+	ret = fread(&nameLen,sizeof(unsigned char),1,f);
+	ret = fread(name,nameLen,1,f);
+	name[nameLen] = 0;
+	ret = fread(&xDim,sizeof(int),1,f);
+	ret = fread(&yDim,sizeof(int),1,f);
+	ret = fread(&zDim,sizeof(int),1,f);
+	ret = fread(&positionX,sizeof(float),1,f);
+	ret = fread(&positionY,sizeof(float),1,f);
 	ret = fread(&numCells,sizeof(unsigned int),1,f);
 	ret = fread(&signalLength,sizeof(unsigned int),1,f);
-	fprintf(stdout,"Cells %i, signal length %i\n",numCells,signalLength);
+//	fprintf(stdout,"Cells %i, signal length %i\n",numCells,signalLength);
 	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement*));
 	for (int i=0;i<numCells;i++) cellArray[i] = new CFrelement();
+	printf("LOADING \n");
 	for (int i=0;i<numCells;i++){
 		cellArray[i]->load(f);
 		cellArray[i]->signalLength = signalLength;
 	}
+	printf("LOADED\n");
 	fclose(f);
 }
 
