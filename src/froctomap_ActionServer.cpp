@@ -14,12 +14,10 @@ typedef actionlib::SimpleActionServer<fremen::froctomapAction> Server;
 void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 {
 
-  if(goal->name_action == "predict"){
-    //Service replaced by estimate!
-      
-  }else if(goal->name_action == "update"){
+  if(goal->name_action == "update"){
     ROS_INFO("Updating...!");
     fremen::UpdateGrid srv;
+    srv.request.mapname = goal->mapname;
     srv.request.order = goal->order;
     srv.request.precision = goal->precision;
     srv.request.lossy = goal->lossy;
@@ -35,6 +33,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
   }else if(goal->name_action == "save"){
     ROS_INFO("Saving...!");
     fremen::SaveGrid srv;
+    srv.request.mapname = goal->mapname;
     srv.request.filename = goal->filename;
     srv.request.lossy = goal->lossy;
 
@@ -48,6 +47,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
   }else if(goal->name_action == "recover"){
     ROS_INFO("Recovering...!");
     fremen::RecoverOctomap srv;
+    srv.request.mapname = goal->mapname;
     srv.request.stamp = goal->stamp;
   
     if (recover_client_ptr->call(srv)){
@@ -60,6 +60,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
   }else if(goal->name_action == "estimate"){
     ROS_INFO("Estimating...!");
     fremen::EstimateOctomap srv;
+    srv.request.mapname = goal->mapname;
     srv.request.stamp = goal->stamp;
     srv.request.minProbability = goal->minprobability;
     srv.request.maxProbability = goal->maxprobability;
