@@ -356,8 +356,11 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 	  gridkp[i] = estimate;
 	  if(estimate >req.minProbability && estimate< req.maxProbability) gridka[i] = 1; else gridka[i] = 0;
   }
-  int nn[] = {1,-1,DIM_Z,-DIM_Z,DIM_Y*DIM_Z,-DIM_Y*DIM_Z};
-  for (int i = DIM_Y*DIM_Z;i<DIM_X*DIM_Y*DIM_Z-DIM_Y*DIM_Z;i++){
+  int dimX = (int)((LIM_MAX_X-LIM_MIN_X)/resolution);
+  int dimY = (int)((LIM_MAX_Y-LIM_MIN_Y)/resolution);
+  int dimZ = (int)((LIM_MAX_Z-LIM_MIN_Z)/resolution);
+  int nn[] = {1,-1,dimZ,-dimZ,dimY*dimZ,-dimY*dimZ};
+  for (int i = dimY*dimZ;i<dimX*dimY*dimZ-dimY*dimZ;i++){
 	  if (gridka[i] == 1){ 
 		  for (int j = 0;j<6;j++){
 			  if (gridka[i+nn[j]]>0) gridka[i]++;
@@ -496,7 +499,7 @@ int main(int argc,char *argv[])
 	ros::init(argc, argv, "froctomap");
 	ros::NodeHandle n;
 
-	n.param("resolution", resolution, 0.05);
+	n.param("resolution", resolution, 0.2);
 	n.param("colorFactor", m_colorFactor, 0.8);
 	n.param<std::string>("filename", filename, "week.bin");
 

@@ -16,31 +16,32 @@
 #include <tf/transform_listener.h>
 #include "tf/message_filter.h"
 #include "message_filters/subscriber.h" 
-
+#include <pcl/registration/icp.h>
 
 float x,y,a;
 float gridResolution = 0.1;
 ros::Publisher pub;
 int pcCounter = 0;
 pcl::PointCloud<pcl::PointXYZ>::Ptr completeCloud(new pcl::PointCloud<pcl::PointXYZ>);
+pcl::PointCloud<pcl::PointXYZ>::Ptr reference(new pcl::PointCloud<pcl::PointXYZ>);
 
 void pose_cb (const geometry_msgs::PosePtr& pose)
 {
-	if (pcCounter > 0 && pcCounter < 10){
+	/*if (pcCounter > 0 && pcCounter < 10){
 		x = pose->position.x;
 		y = pose->position.y;
 		printf("Position updated %f %f\n",x,y);
-	}
+	}*/
 }
 
 void name_cb (const std_msgs::StringPtr& input)
 {
 	//if (input->data == "Aisle2")
-	if (input->data == "Ramp2")
+	/*if (input->data == "Ramp2")
 	{
 		printf("Starting to listen\n");
 		pcCounter = 0;
-	}
+	}*/
 }
 
 
@@ -48,8 +49,9 @@ void cloud_cb(const boost::shared_ptr<const sensor_msgs::PointCloud2>& msg)
 {
 	pcl::VoxelGrid<pcl::PointXYZ> grid;
 	sensor_msgs::PointCloud2 initial2,final;
+	pcl::PointCloud<pcl::PointXYZ> registered;
 	pcl::PCLPointCloud2 transformed2,output2;
-	pcl::PointCloud<pcl::PointXYZ> subsampled1;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr subsampled1(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr transformed1(new pcl::PointCloud<pcl::PointXYZ>);
 
 	tf::Matrix3x3 basis(1,0,0,0,1,0,0,0,1);
@@ -57,21 +59,33 @@ void cloud_cb(const boost::shared_ptr<const sensor_msgs::PointCloud2>& msg)
 	tf::Transform trf(basis,origin);
 	pcl_ros::transformPointCloud("/ptu_pan_motor",trf,*msg,initial2);
 	pcl_conversions::toPCL(initial2, transformed2);
+//	pcl_conversions::toPCL(*msg, transformed2);
 	pcl::fromPCLPointCloud2(transformed2, *transformed1);
 
 	/*subsample*/
-	grid.setLeafSize (0.05, 0.05, 0.05);
+	grid.setLeafSize (0.01, 0.01, 0.01);
 	grid.setInputCloud (transformed1);
-	grid.filter (subsampled1); 
+	grid.filter (*subsampled1); 
 
-	/*register*/
-
-
-
-	pcl::toPCLPointCloud2(subsampled1,output2);
+	if (pcCounter == 0)
+	{
+		*reference = *subsampled1;
+		pcCounter = 1;
+		pcl::toPCLPointCloud2(*subsampled1,output2);
+		printf("Reference scan created!\n");
+	}else{
+		/*register*/
+		pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+		icp.setEuclideanFitnessEpsilon (0.1);
+		icp.setInputCloud(subsampled1);
+		icp.setInputTarget(reference);
+		icp.align(registered);
+		printf("Aligning!\n");
+		pcl::toPCLPointCloud2(registered,output2);
+	}
 
 	output2.header.frame_id = "/ptu_pan_motor";
-	printf("TRANSFORMING!\n");
+	//output2.header.frame_id = "/map";
 	pub.publish(output2);
 } 
 
