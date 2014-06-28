@@ -552,7 +552,7 @@ int main(int argc,char *argv[])
 
 	n.param("resolution", resolution, 0.2);
 	n.param("colorFactor", m_colorFactor, 0.8);
-	n.param<std::string>("filename", filename, "/home/gestom/WayPoint8.grd");
+	n.param<std::string>("filename", filename, "/home/hydro-default/WayPoint8.grd");
 
 	//Fremen Grid:
 	gridPtr = NULL;
