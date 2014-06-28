@@ -1,6 +1,6 @@
 # Define the goal
 string name_action 	# update save predict recover_octomap estimate_octomap
-int64 stamp		# sequence of measurement	
+float64 stamp		# measurement time
 int64 order		# 0 - 100
 float64 precision	# 0.0 - 1.0
 bool lossy

@@ -17,6 +17,7 @@ public:
 
   /*state estimation: estimates the state of the i-th element*/
   float estimate(unsigned int index,unsigned int timeStamp);
+  float fineEstimate(unsigned int index,float timeStamp);
 
   /*state estimation: retrieves the state of the i-th element*/
   unsigned char retrieve(unsigned int index,unsigned int timeStamp);

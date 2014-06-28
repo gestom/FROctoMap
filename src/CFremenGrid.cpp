@@ -99,3 +99,8 @@ float CFremenGrid::estimate(unsigned int index,unsigned int timeStamp)
 {
 	return cellArray[index]->estimate(timeStamp);
 }
+
+float CFremenGrid::fineEstimate(unsigned int index,float timeStamp)
+{
+	return cellArray[index]->fineEstimate(timeStamp);
+}

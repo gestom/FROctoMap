@@ -35,6 +35,7 @@ public:
 
   /*state estimation: retrieves the state*/
   float estimate(int timeStamp);
+  float fineEstimate(float timeStamp);
 
   /*state estimation: retrieves the state*/
   unsigned char retrieve(int timeStamp);
