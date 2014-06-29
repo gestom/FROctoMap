@@ -93,11 +93,12 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 		fremen::EstimateOctomap srv2;
 		ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv1.response.precision, srv1.response.size);
 		srv2.request.mapname = "WayPoint8";
-		float stamps[] = {0.00,1.00,0.00,0.35,0.50,0.65,0.65,0.50,0.35};
-		float minP[] =   {0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00};
-		float maxP[] =   {1.01,1.01,1.01,1.01,1.01,1.00,1.00,1.00,1.00};
-		float morP[] =   {   0,   0,   0,   0,   0,   0,   5,   5,   5};
-		for (int i = 0;i<10;i++){
+		float stamps[] = {0.00,1.00,0.50,0.50,0.50,0.34,0.50,0.66,1.34,1.50,1.66};
+		float minP[] =   {0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00};
+		float maxP[] =   {1.01,1.01,1.01,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00};
+		float morP[] =   {   0,   0,   0,   0,   5,   5,   5,   5,   5,   5,   5};
+		int  delayT[] =  {  10,  10,  10,  10,   5,   3,   3,   3,   3,   3,   3};
+		for (int i = 0;i<11;i++){
 			ROS_INFO("%i -> Estimate",i+1);
 			srv2.request.stamp = stamps[i];
 			srv2.request.minProbability = minP[i];
@@ -109,7 +110,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 				return;
 			}
 			ROS_INFO("Octomap Estimated");
-			sleep(5);
+			sleep(delayT[i]);
 		}               
 		as->setSucceeded();
 	}

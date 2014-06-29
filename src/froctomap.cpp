@@ -35,6 +35,7 @@
 using namespace std;
 using namespace octomap;
 
+int indices[1000000];
 char gridka[DIM_X*DIM_Y*DIM_Z];
 char gridkc[DIM_X*DIM_Y*DIM_Z];
 float gridkp[DIM_X*DIM_Y*DIM_Z];
@@ -47,7 +48,7 @@ int numMaps = 0;
 int poseCount = 0;
 CFremenGrid *gridArray[10];
 CFremenGrid *gridPtr;
-ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr;
+ros::Publisher *octomap_pub_ptr, *retrieve_pub_ptr,*estimate_pub_ptr,*clock_pub_ptr;
 
 //Parameters
 double resolution, m_colorFactor;
@@ -342,7 +343,6 @@ bool expandNode()
 
 bool calculateClusters(int seed,int threshold)
 {
-	int indices[10000];
 	int endIndices,startIndices;
 	int dimX = (int)((LIM_MAX_X-LIM_MIN_X)/resolution);
 	int dimY = (int)((LIM_MAX_Y-LIM_MIN_Y)/resolution);
@@ -437,6 +437,33 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
   //Update grid
   octree.updateInnerOccupancy();
   
+  visualization_msgs::Marker clockVis;
+  //CLOCK
+  clockVis.header.frame_id = "/map";
+  clockVis.header.stamp = ros::Time(0);
+  clockVis.ns = "my_namespace";
+  clockVis.id = 0;
+  clockVis.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  clockVis.action = visualization_msgs::Marker::ADD;
+  clockVis.pose.position.x = gridPtr->positionX;
+  clockVis.pose.position.y = gridPtr->positionY;
+  clockVis.pose.position.z = 5.0;
+  clockVis.pose.orientation.x = 0.0;
+  clockVis.pose.orientation.y = 0.0;
+  clockVis.pose.orientation.z = 0.0;
+  clockVis.pose.orientation.w = 1.0;
+  clockVis.scale.x = 0;
+  clockVis.scale.y = 0;
+  clockVis.scale.z = 0.5;
+  clockVis.color.a = 1.0;
+  clockVis.color.r = 1.0;
+  clockVis.color.g = 1.0;
+  clockVis.color.b = 1.0;
+  char timeStr[1000];
+  sprintf(timeStr,"Time:  %02i:%02i\n",12+(int)req.stamp,((int)(req.stamp*60))%60);
+  if (req.maxProbability>1.0)sprintf(timeStr,"%sDisplay: all",timeStr); else if (req.morphology == 0) sprintf(timeStr,"%sDisplay: dynamic",timeStr); else sprintf(timeStr,"%sDisplay: periodic",timeStr);
+  clockVis.text = timeStr;
+  clock_pub_ptr->publish(clockVis);
   //init visualization markers:
   visualization_msgs::MarkerArray occupiedNodesVis;
   unsigned int m_treeDepth = octree.getTreeDepth();
@@ -551,9 +578,9 @@ int main(int argc,char *argv[])
 	ros::init(argc, argv, "froctomap");
 	ros::NodeHandle n;
 
-	n.param("resolution", resolution, 0.2);
-	n.param("colorFactor", m_colorFactor, 0.8);
 	ros::NodeHandle nh("~");
+	nh.param("resolution", resolution, 0.1);
+	nh.param("colorFactor", m_colorFactor, 0.8);
 	nh.param<std::string>("filename", loadfilename, "");
 
 	//Fremen Grid:
@@ -584,6 +611,9 @@ int main(int argc,char *argv[])
 
 	ros::Publisher estimate_pub = n.advertise<visualization_msgs::MarkerArray>("/froctomap_estimate", 100);
 	estimate_pub_ptr = &estimate_pub;
+	
+	ros::Publisher clock_pub = n.advertise<visualization_msgs::Marker>("/froctomap_clock", 100);
+	clock_pub_ptr = &clock_pub;
 
 	//Services:
 	ros::ServiceServer retrieve_service = n.advertiseService("recover_octomap", recover_octomap);
