@@ -54,7 +54,8 @@ void CFrelement::build(unsigned char* signal,int signalLengthi,CFFTPlan *plan)
 		}
 		gain = sqrt(tmpFrelements[0].amplitude)/signalLength;
 
-		partial_sort(tmpFrelements+1,tmpFrelements+order+1,tmpFrelements+fftLength,fremenSort);
+		//partial_sort(tmpFrelements+1,tmpFrelements+order+1,tmpFrelements+fftLength,fremenSort);
+		partial_sort(tmpFrelements+1,tmpFrelements+order+1,tmpFrelements+100,fremenSort);
 		tim = timer.getTime();
 
 		for(int i=1;i<order+1;i++){
@@ -109,6 +110,38 @@ void CFrelement::update(int modelOrder,CFFTPlan *plan)
 		build(reconstructed,signalLength,plan);
 		free(reconstructed);
 	}
+}
+
+float CFrelement::estimate(float* signal,CFFTPlan *plan,float anomalyThreshold)
+{
+	float evaluation = -1; 
+	CTimer timer;
+	timer.start();
+
+	int fftLength = signalLength/2+1;
+
+	fftw_complex *coeffs;
+	double *probability;
+
+	probability = plan->probability; 
+	coeffs = plan->coeffs;
+	
+	/*reconstructing the frequency spectrum*/
+	if (order > 0){	
+		memset(coeffs,0,fftLength*sizeof(fftw_complex));
+		coeffs[0][0] = gain;
+		for (int i=0;i<order;i++){
+			coeffs[frelements[i].frequency][0] = frelements[i].amplitude*cos(frelements[i].phase);
+			coeffs[frelements[i].frequency][1] = frelements[i].amplitude*sin(frelements[i].phase);
+		}
+		//cout << "IFFT preparation " << timer.getTime() << endl;
+		fftw_execute_dft_c2r(plan->inverse,coeffs,probability);
+		//for (int i = 0;i<signalLength;i++) cout << "Pro " << probability[i] << " " << estimate(i) << endl;
+	}else{
+		for (int i = 0;i<signalLength;i++) probability[i] = gain;
+	}
+	if (debug) cout << "IFFT calculation " << timer.getTime() << endl;
+	for (int i = 0;i<signalLength;i++) signal[i] = probability[i];
 }
 
 float CFrelement::reconstruct(unsigned char* signal,CFFTPlan *plan,bool evaluate)

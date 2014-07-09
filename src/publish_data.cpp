@@ -117,8 +117,8 @@ int main(int argc, char** argv){
     
     camera_info_pub.publish(camera_info);
     depth_image_pub.publish(depth_image);
-    
-    r.sleep();
+    usleep(10000); 
+    //r.sleep();
     free(buffer);
   }
   

@@ -56,6 +56,7 @@ void cloud_cb(const boost::shared_ptr<const sensor_msgs::PointCloud2>& msg)
 
 	tf::Matrix3x3 basis(1,0,0,0,1,0,0,0,1);
 	tf::Vector3 origin(-2.323683,5.255004,-1.45);
+//	tf::Vector3 origin(5.0,5.0,-1.45);
 	tf::Transform trf(basis,origin);
 	pcl_ros::transformPointCloud("/ptu_pan_motor",trf,*msg,initial2);
 	pcl_conversions::toPCL(initial2, transformed2);
@@ -76,7 +77,7 @@ void cloud_cb(const boost::shared_ptr<const sensor_msgs::PointCloud2>& msg)
 	}else{
 		/*register*/
 		pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-		icp.setEuclideanFitnessEpsilon (0.1);
+		icp.setEuclideanFitnessEpsilon (1);
 		icp.setInputCloud(subsampled1);
 		icp.setInputTarget(reference);
 		icp.align(registered);
@@ -88,96 +89,6 @@ void cloud_cb(const boost::shared_ptr<const sensor_msgs::PointCloud2>& msg)
 	//output2.header.frame_id = "/map";
 	pub.publish(output2);
 } 
-
-void cloud_cb_sracka(const sensor_msgs::PointCloud2ConstPtr& inputMessage)
-{
-	pcl::PCLPointCloud2 inputCloud2;
-	pcl::PCLPointCloud2 outputCloud2;
-	Eigen::Matrix4f scale;
-	scale << 1,0,0,0,
-	      0,1,0,0,
-	      0,0,1,0,
-	      0,0,0,1;
-	pcl::PointCloud<pcl::PointXYZ> inputCloud1;
-	pcl::PointCloud<pcl::PointXYZ> outputCloud1;
-	pcl_conversions::toPCL(*inputMessage, inputCloud2);
-	pcl::fromPCLPointCloud2(inputCloud2, inputCloud1);
-	std::cout << completeCloud->size() << std::endl;
-	tf::TransformListener tl;
-	tf::StampedTransform trf;
-	pcl_ros::transformPointCloud("/head_xtion_rgb_optical_frame",inputCloud1,outputCloud1, tl);
-
-/*	if (tl.waitForTransform("/head_xtion_rgb_optical_frame", inputCloud1.header.frame_id,inputMessage->header.stamp, ros::Duration(20.0) ))
-	{
-			tl.lookupTransform("/head_xtion_rgb_optical_frame",inputCloud1.header.frame_id,inputMessage->header.stamp, trf);
-			pcl_ros::transformPointCloud("/head_xtion_rgb_optical_frame",inputCloud1,outputCloud1, tl);
-			//tl.transformPointCloud("/head_xtion_rgb_optical_frame", inputCloud1, outputCloud1);	
-			//	pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-			/*voxel_grid.setInputCloud (completeCloud);
-			  voxel_grid.setLeafSize (0.1, 0.1, 0.1);
-			  voxel_grid.filter (cloud1);
-			  pcl::transformPointCloud (cloud1, output1,scale);*/
-
-			/*		pcl::toPCLPointCloud2(*completeCloud, output2);
-					output2.header.frame_id = "/head_xtion_rgb_optical_frame";
-					pub.publish (output2);*/
-			//	pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-
-			/*	voxel_grid.setInputCloud (inputCloud1);
-				voxel_grid.setLeafSize (0.05, 0.05, 0.05);
-				voxel_grid.filter (outputCloud1);
-			printf("Transform OK\n");
-			pcl::toPCLPointCloud2(outputCloud1,outputCloud2);
-			outputCloud2.header.frame_id = "/map";
-			pub.publish (outputCloud2);
-			}else{*/
-	printf("Timeout when waiting for a transform\n");
-	pcl::toPCLPointCloud2(inputCloud1,outputCloud2);
-	outputCloud2.header.frame_id = "/map";
-	pub.publish (outputCloud2);
-}
-
-
-
-void cloud_cb_fuck (const sensor_msgs::PointCloud2ConstPtr& inputCloud)
-{
-	if (pcCounter++ < 67){
-		pcl::PCLPointCloud2 cloud2;
-		pcl::PCLPointCloud2 output2;
-		Eigen::Matrix4f scale;
-		scale << 1,0,0,0,
-		      0,1,0,0,
-		      0,0,1,0,
-		      0,0,0,1;
-		pcl::PointCloud<pcl::PointXYZ> cloud1;
-		pcl::PointCloud<pcl::PointXYZ> output1;
-		pcl_conversions::toPCL(*inputCloud, cloud2);
-		pcl::fromPCLPointCloud2(cloud2, cloud1);
-		*completeCloud = cloud1;
-		std::cout << completeCloud->size() << std::endl; 
-			
-		pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-		/*voxel_grid.setInputCloud (completeCloud);
-		voxel_grid.setLeafSize (0.1, 0.1, 0.1);
-		voxel_grid.filter (cloud1);
-		pcl::transformPointCloud (cloud1, output1,scale);*/
-
-/*		pcl::toPCLPointCloud2(*completeCloud, output2);
-		output2.header.frame_id = "/head_xtion_rgb_optical_frame";
-		pub.publish (output2);*/
-		if (pcCounter == 67){
-			pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-			voxel_grid.setInputCloud (completeCloud);
-			voxel_grid.setLeafSize (0.05, 0.05, 0.05);
-			voxel_grid.filter (cloud1);
-			pcl::transformPointCloud (cloud1, output1,scale);
-			pcl::toPCLPointCloud2(output1, output2);
-			output2.header.frame_id = "/map";
-			pub.publish (output2);
-		}
-	}
-	printf("%i\n",pcCounter);
-}
 
 int main (int argc, char** argv)
 {

@@ -21,8 +21,8 @@
   <node pkg="fremen" type="froctomap" name="froctomap"  output="screen">
     <param name="resolution" value="0.2" />
     <param name="colorFactor" value="0.8" />
-    <!--param name="filename" value="/home/hydro-default/WayPoint8.grd" /-->
-    <param name="filename" value="" />
+    <param name="filename" value="/home/hydro-default/WayPoint8.grd" />
+    <!--param name="filename" value="" /-->
   </node>
  
   <node pkg="fremen" type="transform" name="transform" output="screen"></node>

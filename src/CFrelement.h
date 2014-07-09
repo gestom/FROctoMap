@@ -31,6 +31,7 @@ public:
   CFrelement();
   ~CFrelement();
 
+  float estimate(float* signal,CFFTPlan *plan,float anomalyThreshold = 1.0);
   float reconstruct(unsigned char* signal,CFFTPlan *plan,bool evaluate = false);
 
   /*state estimation: retrieves the state*/
