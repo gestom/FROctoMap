@@ -33,8 +33,8 @@ int main(int argc,char *argv[])
 	else if (strcmp(argv[1],"updateOne")==0)
 	{
 		grid.load(argv[2]);
-		grid.updateOne(atoi(argv[3]),atoi(argv[4]));
-		grid.save(argv[5],false);
+		grid.updateOne(atoi(argv[2]),atoi(argv[3]));
+		grid.save(argv[4],false);
 	}
 	else if (strcmp(argv[1],"update")==0)
 	{
@@ -48,6 +48,7 @@ int main(int argc,char *argv[])
 		fprintf(stderr,"fremen updateAll input_grid fremen_order output_grid\n");
 		fprintf(stderr,"fremen retrieveOne input_grid cell_index output_grid\n");
 		fprintf(stderr,"fremen overview input_grid\n");
+		fprintf(stderr,"fremen print input_grid\n");
 		return -1;
 	}
 	/*cout << "Model update time " << timer.getTime()/atoi(argv[2])/1000 << " ms." << endl;

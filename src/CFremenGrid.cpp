@@ -41,6 +41,12 @@ void CFremenGrid::update(int order,int signalLengthi)
 	}
 }
 
+void CFremenGrid::updateOne(int cellIndex, int order)
+{
+	plan->prepare(signalLength);
+	cellArray[cellIndex]->update(order,plan);
+}
+
 void CFremenGrid::save(const char* filename,bool lossy)
 {
 	FILE* f=fopen(filename,"w");
@@ -52,7 +58,6 @@ void CFremenGrid::save(const char* filename,bool lossy)
 	fwrite(&zDim,sizeof(int),1,f);
 	fwrite(&positionX,sizeof(float),1,f);
 	fwrite(&positionY,sizeof(float),1,f);
-
 	fwrite(&numCells,sizeof(int),1,f);
 	fwrite(&signalLength,sizeof(int),1,f);
 	for (int i=0;i<numCells;i++) cellArray[i]->save(f,lossy);
@@ -85,23 +90,38 @@ bool CFremenGrid::load(const char* filename)
 	ret = fread(&positionY,sizeof(float),1,f);
 	ret = fread(&numCells,sizeof(unsigned int),1,f);
 	ret = fread(&signalLength,sizeof(unsigned int),1,f);
-//	fprintf(stdout,"Cells %i, signal length %i\n",numCells,signalLength);
 	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement*));
 	for (int i=0;i<numCells;i++) cellArray[i] = new CFrelement();
 	for (int i=0;i<numCells;i++){
 		cellArray[i]->load(f);
 		cellArray[i]->signalLength = signalLength;
 	}
-	printf("FrOctomap %s loaded: name %s with %i cells and %i observations.\n",filename,name,numCells,signalLength);
+	printf("FrOctomap %s loaded: name %s with %i: %ix%ix%i cells and %i observations.\n",filename,name,numCells,xDim,yDim,zDim,signalLength);
 	fclose(f);
 	return true;
 }
 
-void CFremenGrid::print(int number)
+void CFremenGrid::print(bool verbose)
 {
-	if (cellArray[number]->order > 0 || cellArray[number]->outliers > 0){
-		printf("Cell: %i ",number);
-		cellArray[number]->print();
+	for (int i = 0;i<numCells;i++){
+//		if (cellArray[i]->order > 0 || cellArray[i]->outliers > 0){
+			printf("Cell: %i ",i);
+			cellArray[i]->print(verbose);
+//		}
+	}
+}
+
+void CFremenGrid::reconstruct()
+{
+	unsigned char *reconstructed = (unsigned char*) malloc(signalLength*2);
+	plan->prepare(signalLength);
+	for (int i = 0;i<numCells;i++){
+		if (cellArray[i]->order > 0 || cellArray[i]->outliers > 0){
+			printf("Cell %i: ",i);
+			cellArray[i]->reconstruct(reconstructed,plan);
+			for (int j=0;j<signalLength;j++) printf("%i ",reconstructed[j]);
+			printf("\n");
+		}
 	}
 }
 

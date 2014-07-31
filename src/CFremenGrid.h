@@ -29,7 +29,6 @@ public:
 
   /*clears all*/
   void clear();
-  void print();
 
   /*sets the octomap's origin*/
   void setPose(float x, float y);
@@ -37,8 +36,10 @@ public:
 
   /*changes the model order*/
   void update(int number,int signalLength);
+  void updateOne(int cellIndex, int order);
   void reconstruct(int number,unsigned char *reconstructed);
-  void print(int number);
+  void print(bool verbose);
+  void reconstruct();
   void save(const char*name,bool lossy = false);
   bool load(const char*name);
   double *signal;

@@ -3,7 +3,8 @@ project(fremen)
 
 
 find_package(catkin REQUIRED COMPONENTS  pcl_conversions pcl_ros roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap_server sensor_msgs)
-set ( CMAKE_CXX_FLAGS "-O3 -march=native")
+#set ( CMAKE_CXX_FLAGS "-O3 -march=native")
+set ( CMAKE_CXX_FLAGS "-ggdb")
 
 include_directories(${OCTOMAP_INCLUDE_DIRS}) 
 link_libraries( ${OCTOMAP_LIBRARIES}) 
@@ -12,7 +13,7 @@ add_action_files(DIRECTORY action FILES froctomap.action)
 
 add_service_files(
 		FILES
-		RetrieveOctomap.srv
+		RecoverOctomap.srv
 		EstimateOctomap.srv
 		SaveGrid.srv
 		UpdateGrid.srv
@@ -55,6 +56,8 @@ add_executable(publish_data src/publish_data.cpp)
 add_executable(transform src/transform.cpp)
 add_executable(convert src/convert.cpp)
 add_executable(fremen_leeds src/fremen_leeds.cpp)
+add_executable(fremen src/fremen.cpp)
+add_executable(froctomap_util src/froctomap_util.cpp)
 add_executable(frelement_test src/frelement_test.cpp)
 
 add_library(frelement src/CFrelement.cpp)
@@ -68,7 +71,9 @@ target_link_libraries(frelement fremen_timer)
 target_link_libraries(fremengrid frelement)
 target_link_libraries(frelement_test frelement)
 target_link_libraries(fremen_leeds  frelement)
+target_link_libraries(fremen  fremengrid)
 target_link_libraries(froctomap fremengrid)
+target_link_libraries(froctomap_util fremengrid)
 
 target_link_libraries(publish_data ${catkin_LIBRARIES})
 

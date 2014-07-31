@@ -49,7 +49,7 @@ public:
 
   void build(unsigned char* signal,int signalLength,CFFTPlan *plan);
 
-  void print();
+  void print(bool verbose=true);
 
   int save(FILE* file,bool lossy = false);
   int load(FILE* file);

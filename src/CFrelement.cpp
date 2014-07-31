@@ -222,23 +222,28 @@ void CFrelement::add(unsigned char value)
 	return; 
 }
 
-/*text representation of the FREMEN model*/
-void CFrelement::print()
+/*text representation of the fremen model*/
+void CFrelement::print(bool verbose)
 {
 	int errs = 0;
 	for (int i=0;i<outliers/2;i++) errs+=(outlierSet[2*i+1]-outlierSet[2*i]);
 	if (outliers%2 == 1) errs+=signalLength-outlierSet[outliers-1];
-	std::cout << "Model order " << order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << signalLength << " ";
+	std::cout << "model order " << (int)order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << signalLength << " ";
 	if (order > 0) std::cout  << endl;
-	float ampl = gain;
-	for (int i = 0;i<order;i++){
-		std::cout << "Frelement " << i << " " << ampl << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
-		ampl+=frelements[i].amplitude*frelements[i].amplitude;
+	if (verbose){
+		float ampl = gain;
+		for (int i = 0;i<order;i++){
+			std::cout << "frelement " << i << " " << ampl << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
+			ampl+=frelements[i].amplitude*frelements[i].amplitude;
+		}
 	}
-	std::cout << "Outlier set size " << outliers << ":";
-	for (int i = 0;i<outliers;i++) std::cout << " " << outlierSet[i];
+	std::cout << "outlier set size " << outliers << ":";
+	if (verbose){
+		for (int i = 0;i<outliers;i++) std::cout << " " << outlierSet[i];
+	}
 	std::cout << endl; 
 }
+
 
 /*retrieves a boolean*/
 unsigned char CFrelement::retrieve(int timeStamp)
