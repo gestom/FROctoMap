@@ -12,7 +12,7 @@ using namespace std;
 class CFremenGrid
 {
 public:
-  CFremenGrid(int size);
+  CFremenGrid(int dimX,int dimY,int dimZ);
   ~CFremenGrid();
 
   /*state estimation: estimates the state of the i-th element*/

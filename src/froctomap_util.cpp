@@ -14,7 +14,7 @@ int main(int argc,char *argv[])
 
 	CTimer timer;
 	timer.start();
-	CFremenGrid grid(1);
+	CFremenGrid grid(1,1,1);
 	if (strcmp(argv[1],"retrieve")==0){
 		grid.load(argv[2]);
 		grid.reconstruct(atoi(argv[1]),reconstructed);

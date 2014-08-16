@@ -9,22 +9,22 @@ float K[] = {525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0};
 float R[] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 float P[] = {525.0, 0.0, 319.5, 0.0, 0.0, 525.0, 239.5, 0.0, 0.0, 0.0, 1.0, 0.0};
 
-int main(int argc, char** argv){
-
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "publish_data");
   ros::NodeHandle n;
   ros::NodeHandle nh("~");
   
   //Name of the file received as parameter
-  nh.param<std::string>("filename", filename, "week.3d");
-  nh.param<std::string>("directory", directory, "/home/joao/catkin_ws/");
+  //nh.param<std::string>("filename", filename, "week.3d");
+  //nh.param<std::string>("directory", directory, "/home/joao/catkin_ws/");
   
-  directory += filename;
+//  directory += filename;
   
-  ROS_INFO("%s", directory.c_str());
+ // ROS_INFO("%s", directory.c_str());
   
   //Opening the file for reading
-  FILE *file3D = fopen(directory.c_str(),"r");
+  FILE *file3D = fopen(argv[1],"r");
   
   if (file3D == NULL)
   {
@@ -32,12 +32,6 @@ int main(int argc, char** argv){
     return(0);
   }
   
-  //Remove the last three characters:
-  filename.erase(filename.end() - 3, filename.end());
-  
-  //Initial TimeStamp:
-  long long initial_timestamp = atol(filename.c_str());
-
   //Publisher (Depth Image)
   ros::Publisher depth_image_pub = n.advertise<sensor_msgs::Image>("/camera/depth/image_raw",1000);
   ros::Publisher camera_info_pub = n.advertise<sensor_msgs::CameraInfo>("/camera/depth/camera_info",1000);
@@ -91,39 +85,37 @@ int main(int argc, char** argv){
   depth_image.data.resize(depth_image.step * depth_image.height);
 
   ros::Rate r(7);
+  usleep(2000000); 
   
   ROS_INFO("Publishing data...");
-  
-  while(ros::ok() && !feof(file3D)){
+  int a = 0; 
+  buffer = (short int*) malloc (sizeof(short int)*DataSize);
+  while(ros::ok() && feof(file3D)==0){
+	  //Read the timestamp:
+	  if (fread(&data_timestamp,8,1,file3D)==1)
+	  {
+		  //Read the depth data:
+		  fread(buffer,DataSize*2,1,file3D);
 
-    //Read the timestamp:
-    fread(&data_timestamp,8,1,file3D);
-    data_timestamp += initial_timestamp;
-    
-    //Read the depth data:
-//     fseek(file3D,0,SEEK_SET);
-    buffer = (short int*) malloc (sizeof(short int)*DataSize);
-    fread(buffer,DataSize*2,1,file3D);
+		  for(int i = 0; i < DataSize; i++)
+		  {
+			  depth_image.data[2*i] = (buffer[i])%256;
+			  depth_image.data[2*i+1] = (buffer[i])/256;
+		  }
 
-    for(int i = 0; i < DataSize; i++)
-    {
-      depth_image.data[2*i] = (buffer[i])%256;
-      depth_image.data[2*i+1] = (buffer[i])/256;
-    }
+		  //ros::Time test(data_timestamp/1000000,data_timestamp%1000000);
+		  ros::Time test = ros::Time::now();
+		  depth_image.header.stamp = test; //ros::Time(,):
+		  camera_info.header.stamp = test;
 
-    ros::Time test = ros::Time::now();
-    depth_image.header.stamp = test; //ros::Time(,):
-    camera_info.header.stamp = test;
-    
-    camera_info_pub.publish(camera_info);
-    depth_image_pub.publish(depth_image);
-    usleep(10000); 
-    //r.sleep();
-    free(buffer);
+		  camera_info_pub.publish(camera_info);
+		  depth_image_pub.publish(depth_image);
+		  usleep(500000); 
+		  //r.sleep();
+	  }
+	  a++;
   }
-  
-  ros::spin();
-
+  free(buffer);
   fclose(file3D);
 
   return(0);

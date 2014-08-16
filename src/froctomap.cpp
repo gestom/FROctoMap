@@ -17,20 +17,27 @@
 #include "fremen/EstimateOctomap.h"
 #include <std_msgs/String.h>
 
+/*
 #define DIM_X 201 
 #define DIM_Y 201
 #define DIM_Z 101
-
-//#define DIM_X 26 
-//#define DIM_Y 26
-//#define DIM_Z 13 
-
 #define LIM_MIN_X -5.0
 #define LIM_MIN_Y -5.0
 #define LIM_MIN_Z -3.0
 #define LIM_MAX_X 5.0
 #define LIM_MAX_Y 5.0
-#define LIM_MAX_Z 2.0
+#define LIM_MAX_Z 2.0*/
+
+#define DIM_X 54 
+#define DIM_Y 42
+#define DIM_Z 94 
+#define LIM_MIN_X -2.6
+#define LIM_MIN_Y -2.0
+#define LIM_MIN_Z 0.0
+#define LIM_MAX_X 0.05
+#define LIM_MAX_Y 0.05
+#define LIM_MAX_Z 4.7
+
 
 using namespace std;
 using namespace octomap;
@@ -137,7 +144,7 @@ void octomap_cb(const octomap_msgs::Octomap::ConstPtr& msg)
 	}
 	if (currentMap == -1){
 		currentMap = numMaps;
-		gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
+		gridArray[numMaps++] = new CFremenGrid(DIM_X,DIM_Y,DIM_Z);
 		gridArray[currentMap]->setName(mapNode);
 		gridArray[currentMap]->setPose(mapPoseX,mapPoseY);
 		ROS_INFO("Map %s does not exist, creating map at %f %f.",mapNode,mapPoseX,mapPoseY);
@@ -154,12 +161,12 @@ void octomap_cb(const octomap_msgs::Octomap::ConstPtr& msg)
 		double minX, minY, minZ, maxX, maxY, maxZ;
 		octree->getMetricMin(minX, minY, minZ);
 		octree->getMetricMax(maxX, maxY, maxZ);
-		printf("%f %f %f\n",minX,minY,minZ);
-		printf("%f %f %f\n",maxX,maxY,maxZ);
+		//printf("%f %f %f\n",minX,minY,minZ);
+		//printf("%f %f %f\n",maxX,maxY,maxZ);
 		float x = 0*gridPtr->positionX; 
 		float y = 0*gridPtr->positionY;
-		printf("%f %f %f\n",LIM_MIN_X,LIM_MIN_Y,LIM_MIN_Z);
-		printf("%f %f %f\n",LIM_MAX_X,LIM_MAX_Y,LIM_MAX_Z);
+		//printf("%f %f %f\n",LIM_MIN_X,LIM_MIN_Y,LIM_MIN_Z);
+		//printf("%f %f %f\n",LIM_MAX_X,LIM_MAX_Y,LIM_MAX_Z);
 		for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 			for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 				for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
@@ -189,6 +196,29 @@ void octomap_cb(const octomap_msgs::Octomap::ConstPtr& msg)
 	delete tree;
 }
 
+bool load_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
+{
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++)
+	{
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1)
+	{
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		currentMap = numMaps;
+		gridArray[numMaps++] = new CFremenGrid(DIM_X,DIM_Y,DIM_Z);
+		gridPtr = gridArray[currentMap];
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	gridPtr->load(req.filename.c_str());
+	ROS_INFO("3D Grid of %i loaded !",gridPtr->signalLength);
+	res.result = true;
+	return true;
+}
+
+
 bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
 {
 	currentMap = -1;
@@ -206,7 +236,7 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 	
 	gridPtr->save(req.filename.c_str(), (bool) req.lossy);
 	res.size = gridPtr->signalLength;
-	ROS_INFO("3D Grid saved!");
+	ROS_INFO("3D Grid of length %i saved!",res.size);
     res.result = true;
 	return true;
 }
@@ -582,13 +612,14 @@ int main(int argc,char *argv[])
 	nh.param("resolution", resolution, 0.1);
 	nh.param("colorFactor", m_colorFactor, 0.8);
 	nh.param<std::string>("filename", loadfilename, "");
+	strcpy(mapNode,"Greg_office");
 
 	//Fremen Grid:
 	gridPtr = NULL;
-	if (strlen(loadfilename.c_str()) > 0){
+/*	if (strlen(loadfilename.c_str()) > 0){
 		numMaps = 0;
 		printf("attempt to load\n");
-		gridArray[numMaps++] = new CFremenGrid(DIM_X*DIM_Y*DIM_Z);
+		gridArray[numMaps++] = new CFremenGrid(DIM_X,DIM_Y,DIM_Z);
 		currentMap = 0;
 		if (gridArray[0]->load(loadfilename.c_str())){
 			gridPtr = gridArray[currentMap];
@@ -596,11 +627,11 @@ int main(int argc,char *argv[])
 			numMaps = 0;
 			gridPtr = NULL;
 		}
-	}
+	}*/
 	//Subscribers:
 	ros::Subscriber sub_octo = n.subscribe("/octomap_binary", 1000, octomap_cb);
-	ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);
-	ros::Subscriber sub_name = n.subscribe ("/current_node", 1, name_cb);
+//	ros::Subscriber sub_pose = n.subscribe ("/robot_pose", 1, pose_cb);
+//	ros::Subscriber sub_name = n.subscribe ("/current_node", 1, name_cb);
 
 	//Publishers:
 	ros::Publisher octomap_pub = n.advertise<octomap_msgs::Octomap>("/froctomap", 100);
@@ -619,6 +650,7 @@ int main(int argc,char *argv[])
 	ros::ServiceServer retrieve_service = n.advertiseService("recover_octomap", recover_octomap);
 	ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
 	ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
+	ros::ServiceServer load_service = n.advertiseService("load_grid", load_octomap);
 	ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
 
 	ros::spin();

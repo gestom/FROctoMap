@@ -2,10 +2,13 @@
 
 using namespace std;
 
-CFremenGrid::CFremenGrid(int size)
+CFremenGrid::CFremenGrid(int dx,int dy,int dz)
 {
+	xDim = dx;
+	yDim = dy;
+	zDim = dz;
 	signalLength = 0;
-	numCells = size;
+	numCells = xDim*yDim*zDim;
 	order = 0;
 	cellArray = (CFrelement**) malloc(numCells*sizeof(CFrelement*));
 	for (int i=0;i<numCells;i++) cellArray[i] = new CFrelement();
