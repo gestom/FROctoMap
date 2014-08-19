@@ -96,9 +96,12 @@ void CFrelement::build(unsigned char* signal,int signalLengthi,CFFTPlan *plan)
 	return;
 }
 
-void CFrelement::update(int modelOrder,CFFTPlan *plan)
+float CFrelement::update(int modelOrder,CFFTPlan *plan,bool evaluate)
 {
+	float precision = 1.0;
+	int errs = 0;
 	if (order == 0 && outliers == 0){
+		errs = -signalLength;
 	}else{
 		unsigned char *reconstructed = (unsigned char*)malloc(signalLength*sizeof(unsigned char));
 		reconstruct(reconstructed,plan);
@@ -109,7 +112,14 @@ void CFrelement::update(int modelOrder,CFFTPlan *plan)
 		if (frelements == NULL) fprintf(stderr,"Failed to reallocate spectral components!\n");
 		build(reconstructed,signalLength,plan);
 		free(reconstructed);
+
 	}
+	if (evaluate)
+	{
+		for (int i=0;i<outliers/2;i++) errs+=(outlierSet[2*i+1]-outlierSet[2*i]);
+		if (outliers%2 == 1) errs+=signalLength-outlierSet[outliers-1];
+	}
+	return (float)errs/signalLength;
 }
 
 float CFrelement::estimate(float* signal,CFFTPlan *plan,float anomalyThreshold)

@@ -57,7 +57,7 @@ public:
   int load(char* name);
 
   /*changes the model order*/
-  void update(int modelOrder,CFFTPlan *plan);
+  float update(int modelOrder,CFFTPlan *plan,bool evaluate = false);
 
   double *signal;
 

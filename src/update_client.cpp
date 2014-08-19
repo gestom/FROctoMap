@@ -21,7 +21,7 @@ int main(int argc, char **argv)
   srv.request.lossy = atoi(argv[3]);
   
   if (client.call(srv)){
-    ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv.response.precision, srv.response.size);
+    ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv.response.allError, srv.response.size);
   }else{
     ROS_ERROR("Failed to call service update_grid");
     return 1;

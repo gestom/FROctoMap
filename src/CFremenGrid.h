@@ -7,6 +7,11 @@
 @author Tom Krajnik
 */
 
+typedef struct{
+	float all;
+	float dynamic;
+}SGridErrors;
+
 using namespace std;
 
 class CFremenGrid
@@ -35,7 +40,7 @@ public:
   void setName(const char* n);
 
   /*changes the model order*/
-  void update(int number,int signalLength);
+  SGridErrors update(int order,int signalLengthi,bool evaluate = false);
   void updateOne(int cellIndex, int order);
   void reconstruct(int number,unsigned char *reconstructed);
   void print(bool verbose);

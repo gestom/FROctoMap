@@ -33,15 +33,27 @@ void CFremenGrid::setPose(float x, float y)
 	positionY = y;
 }
 
-void CFremenGrid::update(int order,int signalLengthi)
+SGridErrors CFremenGrid::update(int order,int signalLengthi,bool evaluate)
 {
 	signalLength = signalLengthi;
 	plan->prepare(signalLength);
 	cout << "Signal length " << signalLength << " of " << cellArray[0]->getLength() << endl;
+	SGridErrors e;
+	e.all = e.dynamic = 0;
+	int numDynamicCells = 0;
+	float localError = 0;
 	for (int i=0;i<numCells;i++){
 //		if (i%100==0)cout << "Updating cell " << i << " of " << numCells << endl;
-		cellArray[i]->update(order,plan);
+		localError = cellArray[i]->update(order,plan,evaluate);
+		if (localError >= 0){
+			e.all +=localError;
+			e.dynamic += localError;
+			numDynamicCells++;
+		}
 	}
+	e.all = e.all/numCells;
+	e.dynamic = e.dynamic/numDynamicCells;
+	return e;
 }
 
 void CFremenGrid::updateOne(int cellIndex, int order)

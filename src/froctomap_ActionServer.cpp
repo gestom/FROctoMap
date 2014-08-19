@@ -23,7 +23,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 		srv.request.lossy = goal->lossy;
 
 		if(update_client_ptr->call(srv)){
-			ROS_INFO("3D Grid Updated (Precision: %f | Size: %ld)", srv.response.precision, srv.response.size);
+			ROS_INFO("3D Grid Updated (Precision: %f | Size: %ld)", srv.response.allError, srv.response.size);
 			as->setSucceeded();
 		}else{
 			ROS_ERROR("Failed to call service update_grid");
@@ -91,7 +91,7 @@ void execute(const fremen::froctomapGoalConstPtr& goal, Server* as)
 		}
 
 		fremen::EstimateOctomap srv2;
-		ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv1.response.precision, srv1.response.size);
+		ROS_INFO("3D Grid Updated (Precision: %f | Size: %d)", srv1.response.allError, srv1.response.size);
 		srv2.request.mapname = "WayPoint8";
 		float stamps[] = {0.00,1.00,0.50,0.50,0.50,0.34,0.50,0.66,1.34,1.50,1.66};
 		float minP[] =   {0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00};

@@ -255,9 +255,11 @@ bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Respo
 	}else{
 		gridPtr = gridArray[currentMap];
 	}
-	gridPtr->update((int) req.order, gridPtr->signalLength);
+	SGridErrors errors = gridPtr->update((int) req.order, gridPtr->signalLength,true);
 	res.size = gridPtr->signalLength;
-	ROS_INFO("3D Grid updated and saved!");
+	ROS_INFO("3D Grid updated - error rate is %f / %f.",errors.all,errors.dynamic);
+	res.allError = errors.all;
+	res.dynError = errors.dynamic;
 	res.result = true;
 	return true;
 }

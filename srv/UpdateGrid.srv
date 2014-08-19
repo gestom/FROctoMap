@@ -3,6 +3,7 @@ int64 order
 float64 precision
 bool lossy
 ---
-float64 precision
+float64 allError 
+float64 dynError 
 int64 size
 bool result
