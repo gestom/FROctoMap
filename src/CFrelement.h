@@ -51,13 +51,16 @@ public:
 
   void print(bool verbose=true);
 
-  int save(FILE* file,bool lossy = false);
+  int save(FILE* file,bool lossy = false,int forceOrder = -1);
   int load(FILE* file);
-  int save(char* name,bool lossy = false);
+  int save(char* name,bool lossy = false,int forceOrder = -1);
   int load(char* name);
 
   /*changes the model order*/
   float update(int modelOrder,CFFTPlan *plan,bool evaluate = false);
+
+  /*evaluates the model precision*/
+  int evaluatePrecision(CFFTPlan *plan,float errors[],int maxOrder);
 
   double *signal;
 

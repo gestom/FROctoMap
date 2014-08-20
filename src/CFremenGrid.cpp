@@ -39,21 +39,45 @@ SGridErrors CFremenGrid::update(int order,int signalLengthi,bool evaluate)
 	plan->prepare(signalLength);
 	cout << "Signal length " << signalLength << " of " << cellArray[0]->getLength() << endl;
 	SGridErrors e;
-	e.all = e.dynamic = 0;
+	float err = 0;
 	int numDynamicCells = 0;
+	int numNonempty = 0;
 	float localError = 0;
 	for (int i=0;i<numCells;i++){
-//		if (i%100==0)cout << "Updating cell " << i << " of " << numCells << endl;
 		localError = cellArray[i]->update(order,plan,evaluate);
 		if (localError >= 0){
-			e.all +=localError;
-			e.dynamic += localError;
+			err += localError;
 			numDynamicCells++;
 		}
+		if (localError > -2) numNonempty++;
 	}
-	e.all = e.all/numCells;
-	e.dynamic = e.dynamic/numDynamicCells;
+	e.all = err/numCells;
+	e.dynamic = err/numDynamicCells;
+	e.nonempty = err/numNonempty;
 	return e;
+}
+
+int CFremenGrid::evaluatePrecision(SGridErrors e[],int maxOrder)
+{
+	plan->prepare(signalLength);
+	int numDynamicCells = 0;
+	int numNonempty = 0;
+	float localError[maxOrder];
+	float sumError[maxOrder];
+	memset(sumError,0,sizeof(float)*maxOrder);
+	for (int i=0;i<numCells;i++){
+		cellArray[i]->evaluatePrecision(plan,localError,maxOrder);
+		if (localError[0] >= 0) numDynamicCells++;
+		if (localError[0] > -2) numNonempty++;
+		for (int j=0;j<maxOrder;j++){
+			if (localError[0] >= 0)	sumError[j] += localError[j];
+		}
+	}
+	for (int j=0;j<maxOrder;j++){
+		e[j].all = sumError[j]/numCells;
+		e[j].dynamic = sumError[j]/numDynamicCells;
+		e[j].nonempty = sumError[j]/numNonempty;
+	}
 }
 
 void CFremenGrid::updateOne(int cellIndex, int order)
@@ -62,7 +86,7 @@ void CFremenGrid::updateOne(int cellIndex, int order)
 	cellArray[cellIndex]->update(order,plan);
 }
 
-void CFremenGrid::save(const char* filename,bool lossy)
+void CFremenGrid::save(const char* filename,bool lossy,int forceOrder)
 {
 	FILE* f=fopen(filename,"w");
 	unsigned char nameLen = strlen(name);
@@ -75,7 +99,7 @@ void CFremenGrid::save(const char* filename,bool lossy)
 	fwrite(&positionY,sizeof(float),1,f);
 	fwrite(&numCells,sizeof(int),1,f);
 	fwrite(&signalLength,sizeof(int),1,f);
-	for (int i=0;i<numCells;i++) cellArray[i]->save(f,lossy);
+	for (int i=0;i<numCells;i++) cellArray[i]->save(f,lossy,forceOrder);
 	fclose(f);
 }
 
@@ -119,10 +143,10 @@ bool CFremenGrid::load(const char* filename)
 void CFremenGrid::print(bool verbose)
 {
 	for (int i = 0;i<numCells;i++){
-//		if (cellArray[i]->order > 0 || cellArray[i]->outliers > 0){
+		if (cellArray[i]->order > 0 || cellArray[i]->outliers > 0){
 			printf("Cell: %i ",i);
 			cellArray[i]->print(verbose);
-//		}
+		}
 	}
 }
 

@@ -96,11 +96,49 @@ void CFrelement::build(unsigned char* signal,int signalLengthi,CFFTPlan *plan)
 	return;
 }
 
+int CFrelement::evaluatePrecision(CFFTPlan *plan,float errors[],int maxOrder)
+{
+	float evaluation;
+	if (outliers == 0 && order == 0){
+		for (int currentOrder = 0;currentOrder<maxOrder;currentOrder++){
+			if (gain == 0) errors[currentOrder] = -3; else errors[currentOrder] = -1;
+		}
+	}else{ 
+		unsigned char *reconstructed = (unsigned char*)malloc(signalLength*sizeof(unsigned char));
+		reconstruct(reconstructed,plan);
+		int fftLength = signalLength/2+1;
+		double *probability = plan->probability; 
+		fftw_complex *coeffs = plan->coeffs;
+
+		for (int currentOrder = 0;currentOrder<maxOrder;currentOrder++)
+		{
+			/*reconstructing the frequency spectrum*/
+			memset(coeffs,0,fftLength*sizeof(fftw_complex));
+			coeffs[0][0] = gain;
+			for (int i=0;i<currentOrder;i++){
+				coeffs[frelements[i].frequency][0] = frelements[i].amplitude*cos(frelements[i].phase);
+				coeffs[frelements[i].frequency][1] = frelements[i].amplitude*sin(frelements[i].phase);
+			}
+			fftw_execute_dft_c2r(plan->inverse,coeffs,probability);
+			evaluation = 0;
+			for (int i = 0;i<signalLength;i++) evaluation+=fabs(reconstructed[i]-(probability[i]>=0.5));
+			errors[currentOrder]  = evaluation/signalLength;
+		}
+		free(reconstructed);
+	}
+	return order;
+}
+
 float CFrelement::update(int modelOrder,CFFTPlan *plan,bool evaluate)
 {
 	float precision = 1.0;
 	int errs = 0;
 	if (order == 0 && outliers == 0){
+		if (gain == 0) errs = -3*signalLength; else errs = -signalLength; 
+	}else if (order == 0 && outliers == 1 && outlierSet[0] == 0){
+		free(outlierSet);
+		outliers = 0;
+		gain = 1;
 		errs = -signalLength;
 	}else{
 		unsigned char *reconstructed = (unsigned char*)malloc(signalLength*sizeof(unsigned char));
@@ -112,7 +150,6 @@ float CFrelement::update(int modelOrder,CFFTPlan *plan,bool evaluate)
 		if (frelements == NULL) fprintf(stderr,"Failed to reallocate spectral components!\n");
 		build(reconstructed,signalLength,plan);
 		free(reconstructed);
-
 	}
 	if (evaluate)
 	{
@@ -241,10 +278,8 @@ void CFrelement::print(bool verbose)
 	std::cout << "model order " << (int)order << " prior: " << gain << " error: " << ((float)errs/signalLength) << " size: " << signalLength << " ";
 	if (order > 0) std::cout  << endl;
 	if (verbose){
-		float ampl = gain;
 		for (int i = 0;i<order;i++){
-			std::cout << "frelement " << i << " " << ampl << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
-			ampl+=frelements[i].amplitude*frelements[i].amplitude;
+			std::cout << "frelement " << i << " " << frelements[i].amplitude << " " << frelements[i].phase << " " << frelements[i].frequency << " " << endl;
 		}
 	}
 	std::cout << "outlier set size " << outliers << ":";
@@ -265,11 +300,11 @@ unsigned char CFrelement::retrieve(int timeStamp)
 	return (estimate(timeStamp) >= 0.5)^(i%2);
 }
  
-int CFrelement::save(char* name,bool lossy)
+int CFrelement::save(char* name,bool lossy,int forceOrder)
 {
 	FILE* file = fopen(name,"w");
 	fwrite(&signalLength,sizeof(unsigned int),1,file);
-	save(file,lossy);
+	save(file,lossy,forceOrder);
 	fclose(file);
 }
 
@@ -283,20 +318,22 @@ int CFrelement::load(char* name)
 }
 
 
-int CFrelement::save(FILE* file,bool lossy)
+int CFrelement::save(FILE* file,bool lossy,int forceOrder)
 {
-	unsigned int outlierNum = outliers;
 	unsigned char code = 255;
 	if (order == 0 && outliers == 0)
 	{
 		if (gain == 1) code=254;
 		fwrite(&code,sizeof(unsigned char),1,file);
 	}else{ 
+		unsigned int outlierNum = outliers;
+		unsigned char localOrder = order;
 		if (lossy) outlierNum = 0; 
-		fwrite(&order,sizeof(unsigned char),1,file);
+		if (forceOrder != -1) localOrder = forceOrder;
+		fwrite(&localOrder,sizeof(unsigned char),1,file);
 		fwrite(&outlierNum,sizeof(unsigned int),1,file);
 		fwrite(&gain,sizeof(float),1,file);
-		fwrite(frelements,sizeof(SFrelement),order,file);
+		fwrite(frelements,sizeof(SFrelement),localOrder,file);
 		fwrite(outlierSet,sizeof(unsigned int),outlierNum,file);
 	}
 }

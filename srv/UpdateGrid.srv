@@ -1,9 +1,10 @@
 string mapname
-int64 order
-float64 precision
+int32 order
+float32 precision
 bool lossy
 ---
-float64 allError 
-float64 dynError 
+float32 allError 
+float32 nonemptyError 
+float32 dynamicError 
 int64 size
 bool result

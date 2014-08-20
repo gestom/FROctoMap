@@ -13,6 +13,7 @@
 
 #include "fremen/UpdateGrid.h"
 #include "fremen/SaveGrid.h"
+#include "fremen/EvaluateGrid.h"
 #include "fremen/RecoverOctomap.h"
 #include "fremen/EstimateOctomap.h"
 #include <std_msgs/String.h>
@@ -215,9 +216,39 @@ bool load_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 	gridPtr->load(req.filename.c_str());
 	ROS_INFO("3D Grid of %i loaded !",gridPtr->signalLength);
 	res.result = true;
+//	gridPtr->print(true);
 	return true;
 }
 
+bool evaluate_octomap(fremen::EvaluateGrid::Request  &req, fremen::EvaluateGrid::Response &res)
+{
+	currentMap = -1;
+	for (int i =0;i<numMaps;i++){
+		if (strcmp(req.mapname.c_str(),gridArray[i]->name)==0) currentMap = i; 
+	}
+	if (currentMap == -1){
+		ROS_INFO("Map %s does not exist!",req.mapname.c_str());
+		res.result = false;
+		gridPtr = NULL;
+		return false;
+	}else{
+		gridPtr = gridArray[currentMap];
+	}
+	SGridErrors e[req.maxOrder];
+	gridPtr->evaluatePrecision(e,req.maxOrder);
+	res.size = gridPtr->signalLength;
+	res.allErrors.clear();  
+	for (int i = 0;i<req.maxOrder;i++)
+	{
+		ROS_INFO("Error rate order (all/nonempty/dynamic) is %.5f/%.5f/%.5f.",i,e[i].all,e[i].nonempty,e[i].dynamic);
+		res.allErrors.push_back(e[i].all);  
+		res.nonemptyErrors.push_back(e[i].nonempty);  
+		res.dynamicErrors.push_back(e[i].dynamic);  
+	} 
+	ROS_INFO("3D Grid of length %i saved!",res.size);
+	res.result = true;
+	return true;
+}
 
 bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &res)
 {
@@ -234,9 +265,9 @@ bool save_octomap(fremen::SaveGrid::Request  &req, fremen::SaveGrid::Response &r
 		gridPtr = gridArray[currentMap];
 	}
 	
-	gridPtr->save(req.filename.c_str(), (bool) req.lossy);
+	gridPtr->save(req.filename.c_str(), (bool) req.lossy,req.order);
 	res.size = gridPtr->signalLength;
-	ROS_INFO("3D Grid of length %i saved!",res.size);
+	ROS_INFO("3D Grid of length %ld saved!",res.size);
     res.result = true;
 	return true;
 }
@@ -257,9 +288,10 @@ bool update_octomap(fremen::UpdateGrid::Request  &req, fremen::UpdateGrid::Respo
 	}
 	SGridErrors errors = gridPtr->update((int) req.order, gridPtr->signalLength,true);
 	res.size = gridPtr->signalLength;
-	ROS_INFO("3D Grid updated - error rate is %f / %f.",errors.all,errors.dynamic);
+	ROS_INFO("3D Grid updated - error rate (all/nonempty/dynamic) is %.5f/%.5f/%.5f.",errors.all,errors.nonempty,errors.dynamic);
 	res.allError = errors.all;
-	res.dynError = errors.dynamic;
+	res.dynamicError = errors.dynamic;
+	res.nonemptyError = errors.nonempty;
 	res.result = true;
 	return true;
 }
@@ -281,7 +313,7 @@ bool recover_octomap(fremen::RecoverOctomap::Request  &req, fremen::RecoverOctom
 	
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
-  ROS_INFO("Service: recover stamp %i",req.stamp);
+  ROS_INFO("Service: recover stamp %.3f",req.stamp);
 
   //Create pointcloud:
   octomap::Pointcloud octoCloud;
@@ -423,7 +455,7 @@ bool estimate_octomap(fremen::EstimateOctomap::Request  &req, fremen::EstimateOc
 		gridPtr = gridArray[currentMap];
 	}
 
-    ROS_INFO("Service: estimate stamp %i",req.stamp);
+    ROS_INFO("Service: estimate stamp %.3f",req.stamp);
   octomap_msgs::Octomap bmap_msg;
   OcTree octree (resolution);
   
@@ -653,6 +685,7 @@ int main(int argc,char *argv[])
 	ros::ServiceServer estimate_service = n.advertiseService("estimate_octomap", estimate_octomap);
 	ros::ServiceServer save_service = n.advertiseService("save_grid", save_octomap);
 	ros::ServiceServer load_service = n.advertiseService("load_grid", load_octomap);
+	ros::ServiceServer evaluate_service = n.advertiseService("evaluate_grid", evaluate_octomap);
 	ros::ServiceServer update_service = n.advertiseService("update_grid", update_octomap);
 
 	ros::spin();

@@ -17,6 +17,7 @@ add_service_files(
 		EstimateOctomap.srv
 		SaveGrid.srv
 		UpdateGrid.srv
+		EvaluateGrid.srv
 )
 
 generate_messages(
