@@ -30,18 +30,6 @@ catkin_package(CATKIN_DEPENDS roscpp message_runtime pcl_conversions pcl_ros std
 include_directories(${catkin_INCLUDE_DIRS}) 
 
 
-add_executable(save_client src/save_client.cpp)
-add_dependencies(save_client genmsg fremen_generate_messages)
-target_link_libraries(save_client ${catkin_LIBRARIES})
-
-add_executable(update_client src/update_client.cpp)
-add_dependencies(update_client  genmsg fremen_generate_messages)
-target_link_libraries(update_client ${catkin_LIBRARIES})
-
-add_executable(octomap_client src/octomap_client.cpp)
-target_link_libraries(octomap_client ${catkin_LIBRARIES})
-add_dependencies(octomap_client  genmsg fremen_generate_messages)
-
 add_executable(froctomap_ActionServer src/froctomap_ActionServer.cpp)
 target_link_libraries(froctomap_ActionServer ${catkin_LIBRARIES})
 add_dependencies(froctomap_ActionServer ${fremen_EXPORTED_TARGETS})
