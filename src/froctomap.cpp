@@ -234,11 +234,11 @@ bool evaluate_octomap(fremen::EvaluateGrid::Request  &req, fremen::EvaluateGrid:
 	}else{
 		gridPtr = gridArray[currentMap];
 	}
-	SGridErrors e[req.maxOrder];
-	gridPtr->evaluatePrecision(e,req.maxOrder);
+	SGridErrors e[req.maxOrder+1];
+	gridPtr->evaluatePrecision(e,req.maxOrder+1);
 	res.size = gridPtr->signalLength;
 	res.allErrors.clear();  
-	for (int i = 0;i<req.maxOrder;i++)
+	for (int i = 0;i<req.maxOrder+1;i++)
 	{
 		ROS_INFO("Error rate order (all/nonempty/dynamic) is %.5f/%.5f/%.5f.",i,e[i].all,e[i].nonempty,e[i].dynamic);
 		res.allErrors.push_back(e[i].all);  
@@ -639,6 +639,16 @@ void name_cb (const std_msgs::StringPtr& input)
 
 int main(int argc,char *argv[])
 {
+	CFFTPlan plan;
+	CTimer timer;
+	timer.start();
+	plan.prepare(200000);
+	printf("%i\n",timer.getTime());
+	timer.reset();
+	plan.prepare(200000);
+	printf("%i\n",timer.getTime());
+	return 0;
+
 	ros::init(argc, argv, "froctomap");
 	ros::NodeHandle n;
 
