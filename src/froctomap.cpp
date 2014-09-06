@@ -29,6 +29,7 @@
 #define LIM_MAX_Y 5.0
 #define LIM_MAX_Z 2.0*/
 
+/*delimit the OctoMap dimensions here */
 #define DIM_X 54 
 #define DIM_Y 42
 #define DIM_Z 94 
@@ -39,10 +40,10 @@
 #define LIM_MAX_Y 0.05
 #define LIM_MAX_Z 4.7
 
-
 using namespace std;
 using namespace octomap;
 
+bool debug = false;
 int indices[1000000];
 char gridka[DIM_X*DIM_Y*DIM_Z];
 char gridkc[DIM_X*DIM_Y*DIM_Z];
@@ -162,12 +163,12 @@ void octomap_cb(const octomap_msgs::Octomap::ConstPtr& msg)
 		double minX, minY, minZ, maxX, maxY, maxZ;
 		octree->getMetricMin(minX, minY, minZ);
 		octree->getMetricMax(maxX, maxY, maxZ);
-		//printf("%f %f %f\n",minX,minY,minZ);
-		//printf("%f %f %f\n",maxX,maxY,maxZ);
+		if (debug) printf("%f %f %f\n",minX,minY,minZ);
+		if (debug) printf("%f %f %f\n",maxX,maxY,maxZ);
 		float x = 0*gridPtr->positionX; 
 		float y = 0*gridPtr->positionY;
-		//printf("%f %f %f\n",LIM_MIN_X,LIM_MIN_Y,LIM_MIN_Z);
-		//printf("%f %f %f\n",LIM_MAX_X,LIM_MAX_Y,LIM_MAX_Z);
+		if (debug) printf("%f %f %f\n",LIM_MIN_X,LIM_MIN_Y,LIM_MIN_Z);
+		if (debug) printf("%f %f %f\n",LIM_MAX_X,LIM_MAX_Y,LIM_MAX_Z);
 		for(double i = LIM_MIN_X; i < LIM_MAX_X; i+=resolution){
 			for(double j = LIM_MIN_Y; j < LIM_MAX_Y; j+=resolution){
 				for(double w = LIM_MIN_Z; w < LIM_MAX_Z; w+=resolution){
