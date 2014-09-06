@@ -3,8 +3,8 @@ project(fremen)
 
 
 find_package(catkin REQUIRED COMPONENTS  pcl_conversions pcl_ros roscpp rospy std_msgs visualization_msgs geometry_msgs genmsg octomap_server sensor_msgs)
-#set ( CMAKE_CXX_FLAGS "-O3 -march=native")
-set ( CMAKE_CXX_FLAGS "-ggdb")
+set ( CMAKE_CXX_FLAGS "-Ofast -march=native")
+#set ( CMAKE_CXX_FLAGS "-ggdb")
 
 include_directories(${OCTOMAP_INCLUDE_DIRS}) 
 link_libraries( ${OCTOMAP_LIBRARIES}) 
@@ -30,6 +30,18 @@ catkin_package(CATKIN_DEPENDS roscpp message_runtime pcl_conversions pcl_ros std
 include_directories(${catkin_INCLUDE_DIRS}) 
 
 
+<<<<<<< HEAD
+=======
+add_executable(froctomap_ActionServer src/froctomap_ActionServer.cpp)
+target_link_libraries(froctomap_ActionServer ${catkin_LIBRARIES})
+add_dependencies(froctomap_ActionServer ${fremen_EXPORTED_TARGETS})
+
+
+add_executable(froctomap_ActionClient src/froctomap_ActionClient.cpp)
+target_link_libraries(froctomap_ActionClient ${catkin_LIBRARIES})
+add_dependencies(froctomap_ActionClient ${fremen_EXPORTED_TARGETS})
+
+>>>>>>> bd698e6c74ea1f766cea8b94f72ef5654d9906ee
 add_executable(froctomap src/froctomap.cpp)
 add_executable(convert_raw src/convert_raw.cpp)
 add_executable(froctomap_util src/froctomap_util.cpp)

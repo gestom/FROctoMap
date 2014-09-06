@@ -640,16 +640,6 @@ void name_cb (const std_msgs::StringPtr& input)
 
 int main(int argc,char *argv[])
 {
-	CFFTPlan plan;
-	CTimer timer;
-	timer.start();
-	plan.prepare(200000);
-	printf("%i\n",timer.getTime());
-	timer.reset();
-	plan.prepare(200000);
-	printf("%i\n",timer.getTime());
-	return 0;
-
 	ros::init(argc, argv, "froctomap");
 	ros::NodeHandle n;
 
