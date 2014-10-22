@@ -1,0 +1,11 @@
+# Define the goal
+int64 stamp
+float64 x
+float64 y
+---
+# Define the result
+bool sucessfull
+---
+# Define a feedback message
+float64 gain
+

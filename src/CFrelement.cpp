@@ -12,7 +12,8 @@ CFrelement::CFrelement()
 {
 	outlierSet = NULL;
 	frelements = NULL;
-	signalLength = gain = outliers = order = 0;
+	signalLength = outliers = order = 0;
+	gain = 0.5;
 }
 
 CFrelement::~CFrelement()
